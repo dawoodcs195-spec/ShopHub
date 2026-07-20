@@ -119,6 +119,29 @@ const loginUser = async (req, res) => {
         });
     }
 };
+// ===============================
+// Get User Profile
+// ===============================
+const getUserProfile = async (req, res) => {
+    try {
+        return res.status(200).json({
+            success: true,
+            user: {
+                id: req.user._id,
+                name: req.user.name,
+                email: req.user.email,
+                role: req.user.role,
+                avatar: req.user.avatar,
+                createdAt: req.user.createdAt,
+            },
+        });
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
 
 // ===============================
 // Export Controllers
@@ -126,4 +149,5 @@ const loginUser = async (req, res) => {
 module.exports = {
     registerUser,
     loginUser,
+    getUserProfile,
 };
