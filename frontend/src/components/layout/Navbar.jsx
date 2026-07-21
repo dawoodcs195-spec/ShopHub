@@ -1,12 +1,48 @@
-import { Link } from "react-router-dom";
-import { FaShoppingCart, FaUserCircle, FaSearch } from "react-icons/fa";
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import {
+    FaShoppingCart,
+    FaUserCircle,
+    FaSearch,
+} from "react-icons/fa";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 
 const Navbar = () => {
+    const navigate = useNavigate();
+    const location = useLocation();
+
     const { user, logout } = useAuth();
     const { cartItems } = useCart();
+
+    const [keyword, setKeyword] = useState("");
+
+    const totalCartItems = cartItems.reduce(
+        (total, item) => total + item.quantity,
+        0
+    );
+
+    const handleLogout = () => {
+        logout();
+        navigate("/");
+    };
+
+    const handleSearch = () => {
+        const search = keyword.trim();
+
+        if (search) {
+            navigate(`/?keyword=${encodeURIComponent(search)}`);
+        } else {
+            navigate("/");
+        }
+    };
+
+    const handleKeyDown = (e) => {
+        if (e.key === "Enter") {
+            handleSearch();
+        }
+    };
 
     return (
         <nav className="bg-white shadow-md sticky top-0 z-50">
@@ -17,6 +53,7 @@ const Navbar = () => {
                 <Link
                     to="/"
                     className="text-3xl font-bold text-blue-600"
+                    onClick={() => setKeyword("")}
                 >
                     ShopHub
                 </Link>
@@ -27,10 +64,18 @@ const Navbar = () => {
                     <input
                         type="text"
                         placeholder="Search products..."
+                        value={keyword}
+                        onChange={(e) =>
+                            setKeyword(e.target.value)
+                        }
+                        onKeyDown={handleKeyDown}
                         className="w-full border border-gray-300 px-4 py-2 rounded-l-lg focus:outline-none"
                     />
 
-                    <button className="bg-blue-600 text-white px-5 py-2 rounded-r-lg hover:bg-blue-700">
+                    <button
+                        onClick={handleSearch}
+                        className="bg-blue-600 text-white px-5 py-2 rounded-r-lg hover:bg-blue-700"
+                    >
                         <FaSearch />
                     </button>
 
@@ -41,7 +86,11 @@ const Navbar = () => {
 
                     <Link
                         to="/"
-                        className="hover:text-blue-600"
+                        className={`hover:text-blue-600 ${
+                            location.pathname === "/"
+                                ? "text-blue-600 font-semibold"
+                                : ""
+                        }`}
                     >
                         Home
                     </Link>
@@ -54,12 +103,30 @@ const Navbar = () => {
 
                         <span>Cart</span>
 
-                        {cartItems.length > 0 && (
+                        {totalCartItems > 0 && (
                             <span className="absolute -top-2 -right-3 bg-red-500 text-white rounded-full w-5 h-5 flex items-center justify-center text-xs">
-                                {cartItems.length}
+                                {totalCartItems}
                             </span>
                         )}
                     </Link>
+
+                    {user && (
+                        <Link
+                            to="/my-orders"
+                            className="hover:text-blue-600"
+                        >
+                            My Orders
+                        </Link>
+                    )}
+
+                    {user?.role === "admin" && (
+                        <Link
+                            to="/admin"
+                            className="hover:text-blue-600 font-semibold"
+                        >
+                            Admin
+                        </Link>
+                    )}
 
                     {user ? (
                         <div className="flex items-center gap-3">
@@ -74,7 +141,7 @@ const Navbar = () => {
                             </span>
 
                             <button
-                                onClick={logout}
+                                onClick={handleLogout}
                                 className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
                             >
                                 Logout

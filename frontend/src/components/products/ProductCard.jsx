@@ -1,31 +1,18 @@
 import { Link } from "react-router-dom";
 
-import laptop from "../../assets/images/laptop.jpg";
-import phone from "../../assets/images/phone.jpg";
-import tv from "../../assets/images/tv.jpg";
+import Rating from "../common/Rating";
 
 const ProductCard = ({ product }) => {
-
-    let productImage = laptop;
-
-    if (product.category === "Mobiles") {
-        productImage = phone;
-    }
-
-    if (
-        product.name.toLowerCase().includes("tv") ||
-        product.category === "TV"
-    ) {
-        productImage = tv;
-    }
-
     return (
         <div className="bg-white rounded-xl shadow-lg hover:shadow-2xl transition duration-300 overflow-hidden">
 
             <div className="h-56 overflow-hidden">
 
                 <img
-                    src={productImage}
+                    src={
+                        product.image?.url ||
+                        "https://placehold.co/600x600?text=No+Image"
+                    }
                     alt={product.name}
                     className="w-full h-full object-cover"
                 />
@@ -38,7 +25,12 @@ const ProductCard = ({ product }) => {
                     {product.name}
                 </h2>
 
-                <p className="text-gray-500 h-12 overflow-hidden">
+                <Rating
+                    value={product.rating}
+                    text={`(${product.numReviews} Reviews)`}
+                />
+
+                <p className="text-gray-500 h-12 overflow-hidden mt-3">
                     {product.description}
                 </p>
 

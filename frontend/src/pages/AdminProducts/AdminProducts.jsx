@@ -31,7 +31,11 @@ const AdminProducts = () => {
             setProducts(data);
         } catch (error) {
             console.error(error);
-            toast.error("Failed to load products.");
+
+            toast.error(
+                error.response?.data?.message ||
+                "Failed to load products."
+            );
         } finally {
             setLoading(false);
         }
@@ -48,13 +52,17 @@ const AdminProducts = () => {
             await deleteProduct(id, token);
 
             setProducts((prev) =>
-                prev.filter((p) => p._id !== id)
+                prev.filter((product) => product._id !== id)
             );
 
             toast.success("Product deleted successfully.");
         } catch (error) {
             console.error(error);
-            toast.error("Failed to delete product.");
+
+            toast.error(
+                error.response?.data?.message ||
+                "Failed to delete product."
+            );
         }
     };
 
@@ -69,8 +77,8 @@ const AdminProducts = () => {
     };
 
     const handleCloseModal = () => {
-        setModalOpen(false);
         setSelectedProduct(null);
+        setModalOpen(false);
     };
 
     const handleSubmit = async (formData) => {
@@ -85,10 +93,10 @@ const AdminProducts = () => {
                 );
 
                 setProducts((prev) =>
-                    prev.map((p) =>
-                        p._id === selectedProduct._id
+                    prev.map((product) =>
+                        product._id === selectedProduct._id
                             ? updated.product
-                            : p
+                            : product
                     )
                 );
 
@@ -110,7 +118,11 @@ const AdminProducts = () => {
             handleCloseModal();
         } catch (error) {
             console.error(error);
-            toast.error("Something went wrong.");
+
+            toast.error(
+                error.response?.data?.message ||
+                "Something went wrong."
+            );
         } finally {
             setFormLoading(false);
         }
@@ -149,6 +161,7 @@ const AdminProducts = () => {
 
                     <thead className="bg-blue-600 text-white">
                         <tr>
+                            <th className="p-4 text-left">Image</th>
                             <th className="p-4 text-left">Product</th>
                             <th className="p-4 text-left">Price</th>
                             <th className="p-4 text-left">Category</th>
@@ -158,48 +171,80 @@ const AdminProducts = () => {
                     </thead>
 
                     <tbody>
-                        {products.map((product) => (
-                            <tr
-                                key={product._id}
-                                className="border-b hover:bg-gray-50"
-                            >
-                                <td className="p-4">
-                                    {product.name}
-                                </td>
-                                <td className="p-4">
-                                    Rs. {product.price}
-                                </td>
-                                <td className="p-4">
-                                    {product.category}
-                                </td>
-                                <td className="p-4">
-                                    {product.stock}
-                                </td>
-                                <td className="p-4">
-                                    <div className="flex justify-center gap-5">
 
-                                        <button
-                                            onClick={() =>
-                                                handleOpenEdit(product)
-                                            }
-                                            className="text-blue-600 hover:text-blue-800"
-                                        >
-                                            <FaEdit size={18} />
-                                        </button>
-
-                                        <button
-                                            onClick={() =>
-                                                handleDelete(product._id)
-                                            }
-                                            className="text-red-600 hover:text-red-800"
-                                        >
-                                            <FaTrash size={18} />
-                                        </button>
-
-                                    </div>
+                        {products.length === 0 ? (
+                            <tr>
+                                <td
+                                    colSpan="6"
+                                    className="text-center py-8 text-gray-500"
+                                >
+                                    No products found.
                                 </td>
                             </tr>
-                        ))}
+                        ) : (
+                            products.map((product) => (
+                                <tr
+                                    key={product._id}
+                                    className="border-b hover:bg-gray-50"
+                                >
+
+                                    <td className="p-4">
+                                        <img
+                                            src={
+                                                product.image?.url ||
+                                                "https://placehold.co/80x80?text=No+Image"
+                                            }
+                                            alt={product.name}
+                                            className="w-16 h-16 rounded-lg object-cover border"
+                                        />
+                                    </td>
+
+                                    <td className="p-4 font-semibold">
+                                        {product.name}
+                                    </td>
+
+                                    <td className="p-4">
+                                        Rs. {product.price}
+                                    </td>
+
+                                    <td className="p-4">
+                                        {product.category}
+                                    </td>
+
+                                    <td className="p-4">
+                                        {product.stock}
+                                    </td>
+
+                                    <td className="p-4">
+
+                                        <div className="flex justify-center gap-5">
+
+                                            <button
+                                                onClick={() =>
+                                                    handleOpenEdit(product)
+                                                }
+                                                className="text-blue-600 hover:text-blue-800"
+                                            >
+                                                <FaEdit size={18} />
+                                            </button>
+
+                                            <button
+                                                onClick={() =>
+                                                    handleDelete(product._id)
+                                                }
+                                                className="text-red-600 hover:text-red-800"
+                                            >
+                                                <FaTrash size={18} />
+                                            </button>
+
+                                        </div>
+
+                                    </td>
+
+                                </tr>
+                            ))
+                        )}
+
                     </tbody>
 
                 </table>
