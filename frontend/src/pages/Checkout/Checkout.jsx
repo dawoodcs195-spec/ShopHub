@@ -1,33 +1,49 @@
 import { useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import toast from "react-hot-toast";
 
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
-
 import { createOrder } from "../../services/orderService";
 
 const Checkout = () => {
     const navigate = useNavigate();
 
-    const { user, token } = useAuth();
-
     const {
         cartItems,
-        clearCart,
         shippingAddress,
         saveShippingAddress,
         paymentMethod,
+        savePaymentMethod,
+        clearCart,
     } = useCart();
 
-    const [formData, setFormData] = useState({
-        fullName: shippingAddress.fullName || user?.name || "",
-        phone: shippingAddress.phone || "",
-        address: shippingAddress.address || "",
-        city: shippingAddress.city || "",
-        postalCode: shippingAddress.postalCode || "",
-        country: shippingAddress.country || "",
-    });
+    const { token } = useAuth();
+
+    const [fullName, setFullName] = useState(
+        shippingAddress?.fullName || ""
+    );
+    const [phone, setPhone] = useState(
+        shippingAddress?.phone || ""
+    );
+    const [address, setAddress] = useState(
+        shippingAddress?.address || ""
+    );
+    const [city, setCity] = useState(
+        shippingAddress?.city || ""
+    );
+    const [postalCode, setPostalCode] = useState(
+        shippingAddress?.postalCode || ""
+    );
+    const [country, setCountry] = useState(
+        shippingAddress?.country || ""
+    );
+
+    const [selectedPayment, setSelectedPayment] = useState(
+        paymentMethod || "Stripe"
+    );
+
+    const [processing, setProcessing] = useState(false);
 
     const itemsPrice = cartItems.reduce(
         (total, item) => total + item.price * item.quantity,
@@ -35,206 +51,286 @@ const Checkout = () => {
     );
 
     const shippingPrice = itemsPrice > 0 ? 250 : 0;
-
     const taxPrice = 0;
+    const totalPrice = itemsPrice + shippingPrice + taxPrice;
 
-    const totalPrice =
-        itemsPrice + shippingPrice + taxPrice;
-
-    const handleChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
-    };
-
-    const handleSubmit = async (e) => {
+    const handleShippingSubmit = (e) => {
         e.preventDefault();
 
-        if (cartItems.length === 0) {
-            toast.error("Your cart is empty.");
+        if (
+            !fullName ||
+            !phone ||
+            !address ||
+            !city ||
+            !postalCode ||
+            !country
+        ) {
+            toast.error("Please fill all shipping fields.");
             return;
         }
 
+        saveShippingAddress({
+            fullName,
+            phone,
+            address,
+            city,
+            postalCode,
+            country,
+        });
+
+        savePaymentMethod(selectedPayment);
+
+        if (selectedPayment === "Stripe") {
+            navigate("/stripe-payment");
+        } else {
+            placeOrder();
+        }
+    };
+
+    const placeOrder = async () => {
+        setProcessing(true);
+
         try {
-            saveShippingAddress(formData);
-
-            const orderItems = cartItems.map((item) => ({
-                product: item._id,
-                name: item.name,
-                image: item.image,
-                price: item.price,
-                quantity: item.quantity,
-            }));
-
-            await createOrder(
-                {
-                    orderItems,
-                    shippingAddress: formData,
-                    paymentMethod,
-                    itemsPrice,
-                    shippingPrice,
-                    taxPrice,
-                    totalPrice,
+            const orderData = {
+                orderItems: cartItems.map((item) => ({
+                    product: item._id,
+                    name: item.name,
+                    image: item.image,
+                    price: item.price,
+                    quantity: item.quantity,
+                })),
+                shippingAddress: {
+                    fullName,
+                    phone,
+                    address,
+                    city,
+                    postalCode,
+                    country,
                 },
-                token
-            );
+                paymentMethod: selectedPayment,
+                itemsPrice,
+                shippingPrice,
+                taxPrice,
+                totalPrice,
+            };
+
+            await createOrder(orderData, token);
 
             clearCart();
 
             toast.success("Order placed successfully.");
 
             navigate("/my-orders");
-        } catch (error) {
-            console.error(error);
-            toast.error("Failed to place order.");
+        } catch (err) {
+            toast.error(
+                err.response?.data?.message ||
+                    "Failed to place order."
+            );
+        } finally {
+            setProcessing(false);
         }
     };
 
+    if (cartItems.length === 0) {
+        return (
+            <div className="max-w-6xl mx-auto py-20 text-center">
+                <h1 className="text-4xl font-bold mb-4">
+                    Your Cart is Empty
+                </h1>
+
+                <p className="text-gray-500 mb-8">
+                    Add some products before checkout.
+                </p>
+
+                <Link
+                    to="/"
+                    className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700"
+                >
+                    Continue Shopping
+                </Link>
+            </div>
+        );
+    }
+
     return (
         <div className="max-w-7xl mx-auto py-10 px-5">
-
             <h1 className="text-4xl font-bold mb-10">
                 Checkout
             </h1>
 
-            <div className="grid lg:grid-cols-2 gap-10">
-
-                <form
-                    onSubmit={handleSubmit}
-                    className="bg-white rounded-xl shadow-md p-8 space-y-4"
-                >
-
-                    <h2 className="text-2xl font-bold mb-4">
-                        Shipping Information
-                    </h2>
-
-                    <input
-                        type="text"
-                        name="fullName"
-                        placeholder="Full Name"
-                        value={formData.fullName}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="phone"
-                        placeholder="Phone Number"
-                        value={formData.phone}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="address"
-                        placeholder="Address"
-                        value={formData.address}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="city"
-                        placeholder="City"
-                        value={formData.city}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="postalCode"
-                        placeholder="Postal Code"
-                        value={formData.postalCode}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="country"
-                        placeholder="Country"
-                        value={formData.country}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <div className="border rounded-lg p-4 bg-gray-50">
-                        <p className="font-semibold">
-                            Payment Method
-                        </p>
-
-                        <p className="text-gray-600 mt-1">
-                            {paymentMethod}
-                        </p>
-                    </div>
-
-                    <button
-                        type="submit"
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+            <div className="grid lg:grid-cols-3 gap-10">
+                <div className="lg:col-span-2 space-y-8">
+                    {/* ================= Shipping Form ================= */}
+                    <form
+                        onSubmit={handleShippingSubmit}
+                        className="bg-white rounded-xl shadow-md p-6 space-y-4"
                     >
-                        Place Order
-                    </button>
+                        <h2 className="text-2xl font-bold mb-4">
+                            Shipping Address
+                        </h2>
 
-                </form>
+                        <div className="grid md:grid-cols-2 gap-4">
+                            <input
+                                type="text"
+                                placeholder="Full Name"
+                                value={fullName}
+                                onChange={(e) =>
+                                    setFullName(e.target.value)
+                                }
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
 
-                <div className="bg-white rounded-xl shadow-md p-8 h-fit">
+                            <input
+                                type="text"
+                                placeholder="Phone"
+                                value={phone}
+                                onChange={(e) =>
+                                    setPhone(e.target.value)
+                                }
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
+                        </div>
 
+                        <input
+                            type="text"
+                            placeholder="Address"
+                            value={address}
+                            onChange={(e) =>
+                                setAddress(e.target.value)
+                            }
+                            className="border rounded-lg px-4 py-2 w-full"
+                        />
+
+                        <div className="grid md:grid-cols-3 gap-4">
+                            <input
+                                type="text"
+                                placeholder="City"
+                                value={city}
+                                onChange={(e) =>
+                                    setCity(e.target.value)
+                                }
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
+
+                            <input
+                                type="text"
+                                placeholder="Postal Code"
+                                value={postalCode}
+                                onChange={(e) =>
+                                    setPostalCode(e.target.value)
+                                }
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
+
+                            <input
+                                type="text"
+                                placeholder="Country"
+                                value={country}
+                                onChange={(e) =>
+                                    setCountry(e.target.value)
+                                }
+                                className="border rounded-lg px-4 py-2 w-full"
+                            />
+                        </div>
+
+                        {/* ================= Payment Method ================= */}
+                        <h2 className="text-2xl font-bold mt-6 mb-4">
+                            Payment Method
+                        </h2>
+
+                        <div className="space-y-3">
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="Stripe"
+                                    checked={
+                                        selectedPayment === "Stripe"
+                                    }
+                                    onChange={() =>
+                                        setSelectedPayment("Stripe")
+                                    }
+                                />
+                                <span>Stripe (Card Payment)</span>
+                            </label>
+
+                            <label className="flex items-center gap-3 cursor-pointer">
+                                <input
+                                    type="radio"
+                                    name="paymentMethod"
+                                    value="Cash on Delivery"
+                                    checked={
+                                        selectedPayment ===
+                                        "Cash on Delivery"
+                                    }
+                                    onChange={() =>
+                                        setSelectedPayment(
+                                            "Cash on Delivery"
+                                        )
+                                    }
+                                />
+                                <span>Cash on Delivery</span>
+                            </label>
+                        </div>
+
+                        <button
+                            type="submit"
+                            disabled={processing}
+                            className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60 mt-4"
+                        >
+                            {processing
+                                ? "Processing..."
+                                : selectedPayment === "Stripe"
+                                ? "Continue to Payment"
+                                : "Place Order"}
+                        </button>
+                    </form>
+                </div>
+
+                {/* ================= Order Summary ================= */}
+                <div className="bg-white rounded-xl shadow-md p-6 h-fit">
                     <h2 className="text-2xl font-bold mb-6">
                         Order Summary
                     </h2>
 
-                    {cartItems.map((item) => (
-                        <div
-                            key={item._id}
-                            className="flex justify-between mb-3"
-                        >
-                            <span>
-                                {item.name} × {item.quantity}
-                            </span>
+                    <div className="space-y-3 mb-4">
+                        {cartItems.map((item) => (
+                            <div
+                                key={item._id}
+                                className="flex justify-between text-sm"
+                            >
+                                <span>
+                                    {item.name} x {item.quantity}
+                                </span>
+                                <span>
+                                    Rs. {item.price * item.quantity}
+                                </span>
+                            </div>
+                        ))}
+                    </div>
 
-                            <span>
-                                Rs. {item.price * item.quantity}
-                            </span>
-                        </div>
-                    ))}
+                    <hr className="my-4" />
 
-                    <hr className="my-5" />
-
-                    <div className="flex justify-between mb-3">
-                        <span>Items</span>
+                    <div className="flex justify-between mb-2">
+                        <span>Subtotal</span>
                         <span>Rs. {itemsPrice}</span>
                     </div>
 
-                    <div className="flex justify-between mb-3">
+                    <div className="flex justify-between mb-2">
                         <span>Shipping</span>
                         <span>Rs. {shippingPrice}</span>
                     </div>
 
+                    <hr className="my-4" />
+
                     <div className="flex justify-between text-xl font-bold">
-
                         <span>Total</span>
-
                         <span className="text-blue-600">
                             Rs. {totalPrice}
                         </span>
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 };

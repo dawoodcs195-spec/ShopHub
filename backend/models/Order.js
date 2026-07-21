@@ -79,7 +79,26 @@ const orderSchema = new mongoose.Schema(
 
         paymentMethod: {
             type: String,
+            enum: [
+                "Cash on Delivery",
+                "Stripe",
+            ],
             default: "Cash on Delivery",
+        },
+
+        paymentStatus: {
+            type: String,
+            enum: [
+                "Pending",
+                "Paid",
+                "Failed",
+            ],
+            default: "Pending",
+        },
+
+        transactionId: {
+            type: String,
+            default: "",
         },
 
         itemsPrice: {

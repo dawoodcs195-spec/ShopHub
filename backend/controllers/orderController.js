@@ -1,5 +1,8 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const Stripe = require("stripe");
+
+const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
 // ======================================
 // Create Order
@@ -10,6 +13,7 @@ const createOrder = async (req, res) => {
             orderItems,
             shippingAddress,
             paymentMethod,
+            paymentIntentId,
             itemsPrice,
             shippingPrice,
             taxPrice,
@@ -23,7 +27,43 @@ const createOrder = async (req, res) => {
             });
         }
 
-        // Validate stock
+        // ======================================
+        // Stripe Payment Verification
+        // ======================================
+        let isPaid = false;
+        let paidAt = null;
+        let paymentStatus = "Pending";
+        let transactionId = "";
+
+        if (paymentMethod === "Stripe") {
+            if (!paymentIntentId) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Payment Intent ID is required.",
+                });
+            }
+
+            const paymentIntent =
+                await stripe.paymentIntents.retrieve(
+                    paymentIntentId
+                );
+
+            if (paymentIntent.status !== "succeeded") {
+                return res.status(400).json({
+                    success: false,
+                    message: "Stripe payment verification failed.",
+                });
+            }
+
+            isPaid = true;
+            paidAt = new Date();
+            paymentStatus = "Paid";
+            transactionId = paymentIntent.id;
+        }
+
+        // ======================================
+        // Validate Stock
+        // ======================================
         for (const item of orderItems) {
             const product = await Product.findById(item.product);
 
@@ -42,7 +82,9 @@ const createOrder = async (req, res) => {
             }
         }
 
-        // Reduce stock
+        // ======================================
+        // Reduce Stock
+        // ======================================
         for (const item of orderItems) {
             const product = await Product.findById(item.product);
 
@@ -51,11 +93,18 @@ const createOrder = async (req, res) => {
             await product.save();
         }
 
+        // ======================================
+        // Create Order
+        // ======================================
         const order = await Order.create({
             user: req.user._id,
             orderItems,
             shippingAddress,
             paymentMethod,
+            paymentStatus,
+            transactionId,
+            isPaid,
+            paidAt,
             itemsPrice,
             shippingPrice,
             taxPrice,

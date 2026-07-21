@@ -8,6 +8,7 @@ import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
 import Cart from "./pages/Cart/Cart";
 import Checkout from "./pages/Checkout/Checkout";
+import StripePayment from "./pages/StripePayment/StripePayment";
 import MyOrders from "./pages/MyOrders/MyOrders";
 import ProductDetails from "./pages/ProductDetails/ProductDetails";
 import Profile from "./pages/Profile/Profile";
@@ -59,6 +60,15 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <Checkout />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/stripe-payment"
+                        element={
+                            <ProtectedRoute>
+                                <StripePayment />
                             </ProtectedRoute>
                         }
                     />
