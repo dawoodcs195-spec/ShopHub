@@ -10,6 +10,8 @@ import Cart from "./pages/Cart/Cart";
 import Checkout from "./pages/Checkout/Checkout";
 import MyOrders from "./pages/MyOrders/MyOrders";
 import ProductDetails from "./pages/ProductDetails/ProductDetails";
+import Profile from "./pages/Profile/Profile";
+import Wishlist from "./pages/Wishlist/Wishlist";
 
 import Admin from "./pages/Admin/Admin";
 import AdminProducts from "./pages/AdminProducts/AdminProducts";
@@ -28,10 +30,7 @@ function App() {
 
                     {/* ================= Public Routes ================= */}
 
-                    <Route
-                        path="/"
-                        element={<Home />}
-                    />
+                    <Route path="/" element={<Home />} />
 
                     <Route
                         path="/login"
@@ -69,6 +68,24 @@ function App() {
                         element={
                             <ProtectedRoute>
                                 <MyOrders />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/wishlist"
+                        element={
+                            <ProtectedRoute>
+                                <Wishlist />
+                            </ProtectedRoute>
+                        }
+                    />
+
+                    <Route
+                        path="/profile"
+                        element={
+                            <ProtectedRoute>
+                                <Profile />
                             </ProtectedRoute>
                         }
                     />

@@ -1,7 +1,21 @@
 import toast from "react-hot-toast";
+import { FaHeart, FaRegHeart } from "react-icons/fa";
+
 import Rating from "../common/Rating";
 
+import { useAuth } from "../../context/AuthContext";
+import { useWishlist } from "../../context/WishlistContext";
+
 const ProductInfo = ({ product, addToCart }) => {
+    const { user } = useAuth();
+
+    const {
+        toggleWishlist,
+        isInWishlist,
+    } = useWishlist();
+
+    const wishlisted = isInWishlist(product._id);
+
     const handleAddToCart = () => {
         if (product.stock <= 0) {
             toast.error("Product is out of stock.");
@@ -12,13 +26,15 @@ const ProductInfo = ({ product, addToCart }) => {
         toast.success("Added to cart.");
     };
 
+    const handleWishlist = async () => {
+        await toggleWishlist(product._id);
+    };
+
     return (
         <div className="grid lg:grid-cols-2 gap-12">
-
             {/* Product Image */}
 
             <div className="bg-white rounded-xl shadow-lg p-6">
-
                 <img
                     src={
                         product.image?.url ||
@@ -27,16 +43,36 @@ const ProductInfo = ({ product, addToCart }) => {
                     alt={product.name}
                     className="w-full h-[500px] object-cover rounded-xl"
                 />
-
             </div>
 
             {/* Product Details */}
 
             <div>
+                <div className="flex items-start justify-between gap-4 mb-3">
+                    <h1 className="text-5xl font-bold">
+                        {product.name}
+                    </h1>
 
-                <h1 className="text-5xl font-bold mb-3">
-                    {product.name}
-                </h1>
+                    {user && (
+                        <button
+                            onClick={handleWishlist}
+                            className="bg-white rounded-full p-3 shadow-md hover:scale-110 transition"
+                            aria-label="Toggle Wishlist"
+                        >
+                            {wishlisted ? (
+                                <FaHeart
+                                    size={26}
+                                    className="text-red-500"
+                                />
+                            ) : (
+                                <FaRegHeart
+                                    size={26}
+                                    className="text-gray-600"
+                                />
+                            )}
+                        </button>
+                    )}
+                </div>
 
                 <Rating
                     value={product.rating}
@@ -54,7 +90,6 @@ const ProductInfo = ({ product, addToCart }) => {
                 </h2>
 
                 <div className="space-y-3 mb-8">
-
                     <p>
                         <strong>Category:</strong>{" "}
                         {product.category}
@@ -82,7 +117,6 @@ const ProductInfo = ({ product, addToCart }) => {
                                 Only {product.stock} left in stock
                             </p>
                         )}
-
                 </div>
 
                 <button
@@ -98,9 +132,7 @@ const ProductInfo = ({ product, addToCart }) => {
                         ? "Out of Stock"
                         : "Add To Cart"}
                 </button>
-
             </div>
-
         </div>
     );
 };

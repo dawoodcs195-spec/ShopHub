@@ -3,18 +3,30 @@ import { createContext, useContext, useEffect, useState } from "react";
 const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
+    // ===============================
+    // User
+    // ===============================
     const [user, setUser] = useState(() => {
         const savedUser = localStorage.getItem("user");
         return savedUser ? JSON.parse(savedUser) : null;
     });
 
+    // ===============================
+    // Token
+    // ===============================
     const [token, setToken] = useState(() => {
         return localStorage.getItem("token") || null;
     });
 
+    // ===============================
+    // Persist Auth
+    // ===============================
     useEffect(() => {
         if (user) {
-            localStorage.setItem("user", JSON.stringify(user));
+            localStorage.setItem(
+                "user",
+                JSON.stringify(user)
+            );
         } else {
             localStorage.removeItem("user");
         }
@@ -26,11 +38,24 @@ export const AuthProvider = ({ children }) => {
         }
     }, [user, token]);
 
+    // ===============================
+    // Login
+    // ===============================
     const login = (userData, jwtToken) => {
         setUser(userData);
         setToken(jwtToken);
     };
 
+    // ===============================
+    // Update User
+    // ===============================
+    const updateUser = (userData) => {
+        setUser(userData);
+    };
+
+    // ===============================
+    // Logout
+    // ===============================
     const logout = () => {
         setUser(null);
         setToken(null);
@@ -42,6 +67,7 @@ export const AuthProvider = ({ children }) => {
                 user,
                 token,
                 login,
+                updateUser,
                 logout,
             }}
         >

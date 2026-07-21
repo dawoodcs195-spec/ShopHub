@@ -4,6 +4,7 @@ import {
     FaShoppingCart,
     FaUserCircle,
     FaSearch,
+    FaHeart,
 } from "react-icons/fa";
 
 import { useAuth } from "../../context/AuthContext";
@@ -46,10 +47,7 @@ const Navbar = () => {
 
     return (
         <nav className="bg-white shadow-md sticky top-0 z-50">
-
             <div className="max-w-7xl mx-auto px-6 py-4 flex items-center justify-between">
-
-                {/* Logo */}
                 <Link
                     to="/"
                     className="text-3xl font-bold text-blue-600"
@@ -58,9 +56,7 @@ const Navbar = () => {
                     ShopHub
                 </Link>
 
-                {/* Search */}
                 <div className="hidden md:flex items-center w-2/5">
-
                     <input
                         type="text"
                         placeholder="Search products..."
@@ -78,12 +74,9 @@ const Navbar = () => {
                     >
                         <FaSearch />
                     </button>
-
                 </div>
 
-                {/* Right Side */}
                 <div className="flex items-center gap-6">
-
                     <Link
                         to="/"
                         className={`hover:text-blue-600 ${
@@ -111,12 +104,33 @@ const Navbar = () => {
                     </Link>
 
                     {user && (
-                        <Link
-                            to="/my-orders"
-                            className="hover:text-blue-600"
-                        >
-                            My Orders
-                        </Link>
+                        <>
+                            <Link
+                                to="/wishlist"
+                                className={`flex items-center gap-2 hover:text-red-500 ${
+                                    location.pathname === "/wishlist"
+                                        ? "text-red-500 font-semibold"
+                                        : ""
+                                }`}
+                            >
+                                <FaHeart size={18} />
+                                <span>Wishlist</span>
+                            </Link>
+
+                            <Link
+                                to="/my-orders"
+                                className="hover:text-blue-600"
+                            >
+                                My Orders
+                            </Link>
+
+                            <Link
+                                to="/profile"
+                                className="hover:text-blue-600"
+                            >
+                                My Profile
+                            </Link>
+                        </>
                     )}
 
                     {user?.role === "admin" && (
@@ -130,11 +144,18 @@ const Navbar = () => {
 
                     {user ? (
                         <div className="flex items-center gap-3">
-
-                            <FaUserCircle
-                                size={28}
-                                className="text-blue-600"
-                            />
+                            {user.avatar?.url ? (
+                                <img
+                                    src={user.avatar.url}
+                                    alt={user.name}
+                                    className="w-10 h-10 rounded-full object-cover border"
+                                />
+                            ) : (
+                                <FaUserCircle
+                                    size={30}
+                                    className="text-blue-600"
+                                />
+                            )}
 
                             <span className="font-semibold">
                                 {user.name}
@@ -146,7 +167,6 @@ const Navbar = () => {
                             >
                                 Logout
                             </button>
-
                         </div>
                     ) : (
                         <Link
@@ -156,11 +176,8 @@ const Navbar = () => {
                             Login
                         </Link>
                     )}
-
                 </div>
-
             </div>
-
         </nav>
     );
 };
