@@ -1,6 +1,9 @@
 const express = require("express");
 
-const { uploadImage } = require("../controllers/uploadController");
+const {
+    uploadImage,
+    uploadAvatar,
+} = require("../controllers/uploadController");
 
 const upload = require("../middleware/uploadMiddleware");
 
@@ -11,12 +14,25 @@ const {
 
 const router = express.Router();
 
+// ===============================
+// Product Image Upload
+// ===============================
 router.post(
     "/",
     protect,
     authorize("admin"),
     upload.single("image"),
     uploadImage
+);
+
+// ===============================
+// Avatar Upload
+// ===============================
+router.post(
+    "/avatar",
+    protect,
+    upload.single("image"),
+    uploadAvatar
 );
 
 module.exports = router;

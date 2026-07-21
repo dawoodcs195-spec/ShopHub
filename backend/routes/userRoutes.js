@@ -4,6 +4,10 @@ const {
     registerUser,
     loginUser,
     getUserProfile,
+    updateUserProfile,
+    changePassword,
+    toggleWishlist,
+    getWishlist,
 } = require("../controllers/userController");
 
 const {
@@ -13,16 +17,54 @@ const {
 
 const router = express.Router();
 
+// ===============================
+// Public Routes
+// ===============================
+
 // Register
 router.post("/register", registerUser);
 
 // Login
 router.post("/login", loginUser);
 
-// Protected Profile Route
+// ===============================
+// Protected User Routes
+// ===============================
+
+// Get Profile
 router.get("/profile", protect, getUserProfile);
 
+// Update Profile
+router.put("/profile", protect, updateUserProfile);
+
+// Change Password
+router.put(
+    "/change-password",
+    protect,
+    changePassword
+);
+
+// ===============================
+// Wishlist
+// ===============================
+
+// Get Wishlist
+router.get(
+    "/wishlist",
+    protect,
+    getWishlist
+);
+
+// Add / Remove Wishlist Item
+router.post(
+    "/wishlist/:productId",
+    protect,
+    toggleWishlist
+);
+
+// ===============================
 // Admin Test Route
+// ===============================
 router.get(
     "/admin",
     protect,
