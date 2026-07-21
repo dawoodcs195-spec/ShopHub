@@ -1,4 +1,5 @@
 const Product = require("../models/Product");
+const cloudinary = require("../config/cloudinary");
 
 // ===============================
 // Create Product
@@ -15,7 +16,6 @@ const createProduct = async (req, res) => {
             image,
         } = req.body;
 
-        // Validate Required Fields
         if (!name || !description || !price || !category) {
             return res.status(400).json({
                 success: false,
@@ -23,8 +23,22 @@ const createProduct = async (req, res) => {
             });
         }
 
+        const existingProduct = await Product.findOne({
+            name: {
+                $regex: `^${name.trim()}$`,
+                $options: "i",
+            },
+        });
+
+        if (existingProduct) {
+            return res.status(400).json({
+                success: false,
+                message: "A product with this name already exists.",
+            });
+        }
+
         const product = await Product.create({
-            name,
+            name: name.trim(),
             description,
             price,
             category,
@@ -47,15 +61,14 @@ const createProduct = async (req, res) => {
         });
     }
 };
+
 // ===============================
 // Get All Products
 // ===============================
-
 const getAllProducts = async (req, res) => {
     try {
-        let query = {};
+        const query = {};
 
-        // Search by name
         if (req.query.keyword) {
             query.name = {
                 $regex: req.query.keyword,
@@ -63,7 +76,6 @@ const getAllProducts = async (req, res) => {
             };
         }
 
-        // Filter by category
         if (req.query.category) {
             query.category = req.query.category;
         }
@@ -83,6 +95,7 @@ const getAllProducts = async (req, res) => {
         });
     }
 };
+
 // ===============================
 // Get Single Product
 // ===============================
@@ -109,6 +122,7 @@ const getSingleProduct = async (req, res) => {
         });
     }
 };
+
 // ===============================
 // Update Product
 // ===============================
@@ -123,9 +137,44 @@ const updateProduct = async (req, res) => {
             });
         }
 
+        if (
+            req.body.name &&
+            req.body.name.trim().toLowerCase() !==
+                product.name.toLowerCase()
+        ) {
+            const existingProduct = await Product.findOne({
+                name: {
+                    $regex: `^${req.body.name.trim()}$`,
+                    $options: "i",
+                },
+                _id: { $ne: product._id },
+            });
+
+            if (existingProduct) {
+                return res.status(400).json({
+                    success: false,
+                    message: "A product with this name already exists.",
+                });
+            }
+        }
+
+        if (
+            req.body.image &&
+            req.body.image.public_id &&
+            product.image?.public_id &&
+            req.body.image.public_id !== product.image.public_id
+        ) {
+            await cloudinary.uploader.destroy(
+                product.image.public_id
+            );
+        }
+
         const updatedProduct = await Product.findByIdAndUpdate(
             req.params.id,
-            req.body,
+            {
+                ...req.body,
+                name: req.body.name?.trim(),
+            },
             {
                 new: true,
                 runValidators: true,
@@ -145,6 +194,7 @@ const updateProduct = async (req, res) => {
         });
     }
 };
+
 // ===============================
 // Delete Product
 // ===============================
@@ -157,6 +207,12 @@ const deleteProduct = async (req, res) => {
                 success: false,
                 message: "Product not found.",
             });
+        }
+
+        if (product.image?.public_id) {
+            await cloudinary.uploader.destroy(
+                product.image.public_id
+            );
         }
 
         await product.deleteOne();
@@ -174,10 +230,80 @@ const deleteProduct = async (req, res) => {
     }
 };
 
+// ===============================
+// Create / Update Review
+// ===============================
+const createOrUpdateReview = async (req, res) => {
+    try {
+        const { rating, comment } = req.body;
+
+        if (!rating || !comment) {
+            return res.status(400).json({
+                success: false,
+                message: "Rating and comment are required.",
+            });
+        }
+
+        const product = await Product.findById(req.params.id);
+
+        if (!product) {
+            return res.status(404).json({
+                success: false,
+                message: "Product not found.",
+            });
+        }
+
+        const existingReview = product.reviews.find(
+            (review) =>
+                review.user.toString() === req.user._id.toString()
+        );
+
+        if (existingReview) {
+            existingReview.rating = Number(rating);
+            existingReview.comment = comment;
+            existingReview.name = req.user.name;
+        } else {
+            product.reviews.push({
+                user: req.user._id,
+                name: req.user.name,
+                rating: Number(rating),
+                comment,
+            });
+        }
+
+        product.numReviews = product.reviews.length;
+
+        product.rating =
+            product.reviews.reduce(
+                (total, review) => total + review.rating,
+                0
+            ) / product.reviews.length;
+
+        await product.save();
+
+        return res.status(200).json({
+            success: true,
+            message: existingReview
+                ? "Review updated successfully."
+                : "Review added successfully.",
+            rating: product.rating,
+            numReviews: product.numReviews,
+            reviews: product.reviews,
+        });
+
+    } catch (error) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
 module.exports = {
     createProduct,
     getAllProducts,
     getSingleProduct,
     updateProduct,
     deleteProduct,
+    createOrUpdateReview,
 };

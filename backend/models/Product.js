@@ -1,11 +1,49 @@
 const mongoose = require("mongoose");
 
+// ===============================
+// Review Schema
+// ===============================
+const reviewSchema = new mongoose.Schema(
+    {
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true,
+        },
+
+        name: {
+            type: String,
+            required: true,
+        },
+
+        rating: {
+            type: Number,
+            required: true,
+            min: 1,
+            max: 5,
+        },
+
+        comment: {
+            type: String,
+            required: true,
+            trim: true,
+        },
+    },
+    {
+        timestamps: true,
+    }
+);
+
+// ===============================
+// Product Schema
+// ===============================
 const productSchema = new mongoose.Schema(
     {
         name: {
             type: String,
             required: [true, "Product name is required"],
             trim: true,
+            unique: true,
         },
 
         description: {
@@ -35,9 +73,18 @@ const productSchema = new mongoose.Schema(
         },
 
         image: {
-            type: String,
-            default: "",
+            url: {
+                type: String,
+                default: "",
+            },
+
+            public_id: {
+                type: String,
+                default: "",
+            },
         },
+
+        reviews: [reviewSchema],
 
         rating: {
             type: Number,

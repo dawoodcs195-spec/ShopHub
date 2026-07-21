@@ -6,6 +6,7 @@ const {
     getSingleProduct,
     updateProduct,
     deleteProduct,
+    createOrUpdateReview,
 } = require("../controllers/productController");
 
 const {
@@ -15,26 +16,39 @@ const {
 
 const router = express.Router();
 
-// Public Route
+// ===============================
+// Public Routes
+// ===============================
 router.get("/", getAllProducts);
 
 router.get("/:id", getSingleProduct);
 
+// ===============================
+// User Routes
+// ===============================
+router.post(
+    "/:id/reviews",
+    protect,
+    createOrUpdateReview
+);
 
-
-// Admin Only
+// ===============================
+// Admin Routes
+// ===============================
 router.post(
     "/",
     protect,
     authorize("admin"),
     createProduct
 );
+
 router.put(
     "/:id",
     protect,
     authorize("admin"),
     updateProduct
 );
+
 router.delete(
     "/:id",
     protect,
