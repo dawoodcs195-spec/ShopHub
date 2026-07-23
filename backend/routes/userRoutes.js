@@ -11,6 +11,11 @@ const {
 } = require("../controllers/userController");
 
 const {
+    forgotPassword,
+    resetPassword,
+} = require("../controllers/passwordController");
+
+const {
     protect,
     authorize,
 } = require("../middleware/authMiddleware");
@@ -27,15 +32,35 @@ router.post("/register", registerUser);
 // Login
 router.post("/login", loginUser);
 
+// Forgot Password
+router.post(
+    "/forgot-password",
+    forgotPassword
+);
+
+// Reset Password
+router.put(
+    "/reset-password/:token",
+    resetPassword
+);
+
 // ===============================
 // Protected User Routes
 // ===============================
 
 // Get Profile
-router.get("/profile", protect, getUserProfile);
+router.get(
+    "/profile",
+    protect,
+    getUserProfile
+);
 
 // Update Profile
-router.put("/profile", protect, updateUserProfile);
+router.put(
+    "/profile",
+    protect,
+    updateUserProfile
+);
 
 // Change Password
 router.put(

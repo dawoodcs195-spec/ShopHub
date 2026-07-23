@@ -27,6 +27,8 @@ const PaymentForm = ({ totalPrice }) => {
         cartItems,
         shippingAddress,
         clearCart,
+        appliedCoupon,
+        discount,
     } = useCart();
 
     const { token } = useAuth();
@@ -84,6 +86,8 @@ const PaymentForm = ({ totalPrice }) => {
                 shippingPrice,
                 taxPrice,
                 totalPrice,
+                coupon: appliedCoupon?.code || null,
+                discount,
             };
 
             await createOrder(orderData, token);
@@ -128,7 +132,7 @@ const PaymentForm = ({ totalPrice }) => {
 };
 
 const StripePayment = () => {
-    const { cartItems } = useCart();
+    const { cartItems, discount } = useCart();
     const { token } = useAuth();
 
     const [clientSecret, setClientSecret] = useState("");
@@ -146,7 +150,15 @@ const StripePayment = () => {
     );
 
     const shippingPrice = itemsPrice > 0 ? 250 : 0;
-    const totalPrice = itemsPrice + shippingPrice;
+    const taxPrice = 0;
+
+    const totalPrice = Math.max(
+        itemsPrice +
+            shippingPrice +
+            taxPrice -
+            discount,
+        0
+    );
 
     useEffect(() => {
         const getClientSecret = async () => {

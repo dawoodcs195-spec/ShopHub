@@ -10,7 +10,11 @@ const createPaymentIntent = async (req, res) => {
     try {
         const { amount } = req.body;
 
-        if (!amount || amount <= 0) {
+        if (
+            amount === undefined ||
+            amount === null ||
+            Number(amount) <= 0
+        ) {
             return res.status(400).json({
                 success: false,
                 message: "Invalid payment amount.",
@@ -21,7 +25,9 @@ const createPaymentIntent = async (req, res) => {
             await stripe.paymentIntents.create({
                 // Stripe expects the amount in the currency's smallest unit.
                 // For USD, that's cents.
-                amount: Math.round(Number(amount) * 100),
+                amount: Math.round(
+                    Number(amount) * 100
+                ),
                 currency: "usd",
                 automatic_payment_methods: {
                     enabled: true,
@@ -64,7 +70,8 @@ const stripeWebhook = async (req, res) => {
     try {
         switch (event.type) {
             case "payment_intent.succeeded": {
-                const paymentIntent = event.data.object;
+                const paymentIntent =
+                    event.data.object;
 
                 const order = await Order.findOne({
                     transactionId: paymentIntent.id,
@@ -86,7 +93,8 @@ const stripeWebhook = async (req, res) => {
             }
 
             case "payment_intent.payment_failed": {
-                const paymentIntent = event.data.object;
+                const paymentIntent =
+                    event.data.object;
 
                 const order = await Order.findOne({
                     transactionId: paymentIntent.id,

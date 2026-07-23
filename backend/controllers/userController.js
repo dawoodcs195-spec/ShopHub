@@ -3,6 +3,9 @@ const Product = require("../models/Product");
 const bcrypt = require("bcryptjs");
 const generateToken = require("../utils/generateToken");
 const cloudinary = require("../config/cloudinary");
+const {
+    sendWelcomeEmail,
+} = require("../services/emailService");
 
 // ===============================
 // Register User
@@ -36,6 +39,16 @@ const registerUser = async (req, res) => {
             password: hashedPassword,
         });
 
+        // Send welcome email without blocking registration.
+        try {
+            await sendWelcomeEmail(newUser);
+        } catch (emailError) {
+            console.error(
+                "Welcome email failed:",
+                emailError.message
+            );
+        }
+
         return res.status(201).json({
             success: true,
             message: "User registered successfully.",
@@ -47,7 +60,6 @@ const registerUser = async (req, res) => {
                 avatar: newUser.avatar,
             },
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -105,7 +117,6 @@ const loginUser = async (req, res) => {
                 avatar: user.avatar,
             },
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -130,7 +141,6 @@ const getUserProfile = async (req, res) => {
                 createdAt: req.user.createdAt,
             },
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -182,7 +192,6 @@ const updateUserProfile = async (req, res) => {
                 avatar: user.avatar,
             },
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -236,7 +245,6 @@ const changePassword = async (req, res) => {
             success: true,
             message: "Password changed successfully.",
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -290,7 +298,6 @@ const toggleWishlist = async (req, res) => {
             message: "Added to wishlist.",
             wishlist: user.wishlist,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -304,14 +311,12 @@ const toggleWishlist = async (req, res) => {
 // ===============================
 const getWishlist = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id)
-            .populate("wishlist");
+        const user = await User.findById(req.user._id).populate("wishlist");
 
         return res.status(200).json({
             success: true,
             wishlist: user.wishlist,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,

@@ -2,12 +2,18 @@ const express = require("express");
 
 const {
     createProduct,
-    getAllProducts,
     getSingleProduct,
     updateProduct,
     deleteProduct,
+} = require("../controllers/product/productCrudController");
+
+const {
+    getAllProducts,
+} = require("../controllers/product/productQueryController");
+
+const {
     createOrUpdateReview,
-} = require("../controllers/productController");
+} = require("../controllers/product/reviewController");
 
 const {
     protect,

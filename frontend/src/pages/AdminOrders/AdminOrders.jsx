@@ -8,6 +8,8 @@ import {
     updateOrderStatus,
 } from "../../services/orderService";
 
+import AdminOrdersToolbar from "./components/AdminOrdersToolbar";
+
 const AdminOrders = () => {
     const { token } = useAuth();
 
@@ -74,9 +76,7 @@ const AdminOrders = () => {
 
     return (
         <div className="max-w-7xl mx-auto p-8">
-            <h1 className="text-4xl font-bold mb-8">
-                Manage Orders
-            </h1>
+            <AdminOrdersToolbar orders={orders} />
 
             <div className="overflow-x-auto bg-white rounded-xl shadow">
                 <table className="w-full">

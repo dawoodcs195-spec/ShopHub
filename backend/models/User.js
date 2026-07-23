@@ -52,6 +52,15 @@ const userSchema = new mongoose.Schema(
                 ref: "Product",
             },
         ],
+
+        resetPasswordToken: {
+            type: String,
+            default: "",
+        },
+
+        resetPasswordExpire: {
+            type: Date,
+        },
     },
     {
         timestamps: true,

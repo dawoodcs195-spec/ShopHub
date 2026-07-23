@@ -1,6 +1,14 @@
 const Order = require("../models/Order");
 const Product = require("../models/Product");
+const Coupon = require("../models/Coupon");
+const User = require("../models/User");
 const Stripe = require("stripe");
+
+const {
+    sendOrderConfirmationEmail,
+    sendAdminNewOrderEmail,
+    sendDeliveredEmail,
+} = require("../services/emailService");
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 
@@ -18,6 +26,8 @@ const createOrder = async (req, res) => {
             shippingPrice,
             taxPrice,
             totalPrice,
+            coupon,
+            discount,
         } = req.body;
 
         if (!orderItems || orderItems.length === 0) {
@@ -27,9 +37,6 @@ const createOrder = async (req, res) => {
             });
         }
 
-        // ======================================
-        // Stripe Payment Verification
-        // ======================================
         let isPaid = false;
         let paidAt = null;
         let paymentStatus = "Pending";
@@ -61,11 +68,10 @@ const createOrder = async (req, res) => {
             transactionId = paymentIntent.id;
         }
 
-        // ======================================
-        // Validate Stock
-        // ======================================
         for (const item of orderItems) {
-            const product = await Product.findById(item.product);
+            const product = await Product.findById(
+                item.product
+            );
 
             if (!product) {
                 return res.status(404).json({
@@ -82,20 +88,16 @@ const createOrder = async (req, res) => {
             }
         }
 
-        // ======================================
-        // Reduce Stock
-        // ======================================
         for (const item of orderItems) {
-            const product = await Product.findById(item.product);
+            const product = await Product.findById(
+                item.product
+            );
 
             product.stock -= item.quantity;
 
             await product.save();
         }
 
-        // ======================================
-        // Create Order
-        // ======================================
         const order = await Order.create({
             user: req.user._id,
             orderItems,
@@ -105,18 +107,56 @@ const createOrder = async (req, res) => {
             transactionId,
             isPaid,
             paidAt,
+            coupon: coupon || "",
+            discount: discount || 0,
             itemsPrice,
             shippingPrice,
             taxPrice,
             totalPrice,
         });
 
+        if (coupon) {
+            const couponDoc =
+                await Coupon.findOne({
+                    code: coupon,
+                });
+
+            if (couponDoc) {
+                couponDoc.usedCount += 1;
+
+                await couponDoc.save();
+            }
+        }
+
+        try {
+            await sendOrderConfirmationEmail(
+                req.user,
+                order
+            );
+        } catch (emailError) {
+            console.error(
+                "Order confirmation email failed:",
+                emailError.message
+            );
+        }
+
+        try {
+            await sendAdminNewOrderEmail(
+                req.user,
+                order
+            );
+        } catch (emailError) {
+            console.error(
+                "Admin notification email failed:",
+                emailError.message
+            );
+        }
+
         return res.status(201).json({
             success: true,
             message: "Order placed successfully.",
             order,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -141,7 +181,6 @@ const getMyOrders = async (req, res) => {
             count: orders.length,
             orders,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -155,8 +194,9 @@ const getMyOrders = async (req, res) => {
 // ======================================
 const getSingleOrder = async (req, res) => {
     try {
-        const order = await Order.findById(req.params.id)
-            .populate("user", "name email");
+        const order = await Order.findById(
+            req.params.id
+        ).populate("user", "name email");
 
         if (!order) {
             return res.status(404).json({
@@ -169,7 +209,6 @@ const getSingleOrder = async (req, res) => {
             success: true,
             order,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -183,24 +222,105 @@ const getSingleOrder = async (req, res) => {
 // ======================================
 const getAllOrders = async (req, res) => {
     try {
-        const orders = await Order.find()
+        const {
+            search = "",
+            orderStatus,
+            paymentStatus,
+            paymentMethod,
+            startDate,
+            endDate,
+            page = 1,
+            limit = 10,
+        } = req.query;
+
+        const query = {};
+
+        if (orderStatus) {
+            query.orderStatus = orderStatus;
+        }
+
+        if (paymentStatus) {
+            query.paymentStatus = paymentStatus;
+        }
+
+        if (paymentMethod) {
+            query.paymentMethod = paymentMethod;
+        }
+
+        if (startDate || endDate) {
+            query.createdAt = {};
+
+            if (startDate) {
+                query.createdAt.$gte = new Date(
+                    startDate
+                );
+            }
+
+            if (endDate) {
+                const end = new Date(endDate);
+                end.setHours(23, 59, 59, 999);
+                query.createdAt.$lte = end;
+            }
+        }
+
+        let orders = await Order.find(query)
             .populate("user", "name email")
             .sort({
                 createdAt: -1,
             });
 
+        if (search.trim()) {
+            const keyword = search
+                .trim()
+                .toLowerCase();
+
+            orders = orders.filter((order) => {
+                const name =
+                    order.user?.name?.toLowerCase() ||
+                    "";
+
+                const email =
+                    order.user?.email?.toLowerCase() ||
+                    "";
+
+                return (
+                    name.includes(keyword) ||
+                    email.includes(keyword) ||
+                    order._id
+                        .toString()
+                        .toLowerCase()
+                        .includes(keyword)
+                );
+            });
+        }
+
         const totalRevenue = orders.reduce(
-            (total, order) => total + order.totalPrice,
+            (total, order) =>
+                total + order.totalPrice,
             0
+        );
+
+        const totalOrders = orders.length;
+
+        const currentPage = Number(page);
+        const pageSize = Number(limit);
+
+        const paginatedOrders = orders.slice(
+            (currentPage - 1) * pageSize,
+            currentPage * pageSize
         );
 
         return res.status(200).json({
             success: true,
             totalRevenue,
-            count: orders.length,
-            orders,
+            count: totalOrders,
+            page: currentPage,
+            totalPages: Math.ceil(
+                totalOrders / pageSize
+            ),
+            limit: pageSize,
+            orders: paginatedOrders,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,
@@ -212,9 +332,14 @@ const getAllOrders = async (req, res) => {
 // ======================================
 // Update Order Status (Admin)
 // ======================================
-const updateOrderStatus = async (req, res) => {
+const updateOrderStatus = async (
+    req,
+    res
+) => {
     try {
-        const order = await Order.findById(req.params.id);
+        const order = await Order.findById(
+            req.params.id
+        );
 
         if (!order) {
             return res.status(404).json({
@@ -223,11 +348,34 @@ const updateOrderStatus = async (req, res) => {
             });
         }
 
-        order.orderStatus = req.body.orderStatus;
+        order.orderStatus =
+            req.body.orderStatus;
 
-        if (req.body.orderStatus === "Delivered") {
+        if (
+            req.body.orderStatus ===
+            "Delivered"
+        ) {
             order.isDelivered = true;
             order.deliveredAt = Date.now();
+
+            const user =
+                await User.findById(
+                    order.user
+                );
+
+            if (user) {
+                try {
+                    await sendDeliveredEmail(
+                        user,
+                        order
+                    );
+                } catch (emailError) {
+                    console.error(
+                        "Delivered email failed:",
+                        emailError.message
+                    );
+                }
+            }
         }
 
         await order.save();
@@ -237,7 +385,6 @@ const updateOrderStatus = async (req, res) => {
             message: "Order updated successfully.",
             order,
         });
-
     } catch (error) {
         return res.status(500).json({
             success: false,

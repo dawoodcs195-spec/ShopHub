@@ -11,6 +11,7 @@ const uploadRoutes = require("./routes/uploadRoutes");
 const orderRoutes = require("./routes/orderRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const paymentRoutes = require("./routes/paymentRoutes");
+const couponRoutes = require("./routes/couponRoutes");
 
 const app = express();
 
@@ -38,6 +39,7 @@ app.use("/api/upload", uploadRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/payments", paymentRoutes);
+app.use("/api/coupons", couponRoutes);
 
 // Test Route
 app.get("/", (req, res) => {

@@ -6,6 +6,8 @@ import Footer from "./components/layout/Footer";
 import Home from "./pages/Home/Home";
 import Login from "./pages/Login/Login";
 import Register from "./pages/Register/Register";
+import ForgotPassword from "./pages/ForgotPassword/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword/ResetPassword";
 import Cart from "./pages/Cart/Cart";
 import Checkout from "./pages/Checkout/Checkout";
 import StripePayment from "./pages/StripePayment/StripePayment";
@@ -17,6 +19,7 @@ import Wishlist from "./pages/Wishlist/Wishlist";
 import Admin from "./pages/Admin/Admin";
 import AdminProducts from "./pages/AdminProducts/AdminProducts";
 import AdminOrders from "./pages/AdminOrders/AdminOrders";
+import AdminCoupons from "./pages/AdminCoupons/AdminCoupons";
 
 import ProtectedRoute from "./components/common/ProtectedRoute";
 import AdminRoute from "./components/common/AdminRoute";
@@ -28,10 +31,12 @@ function App() {
 
             <main className="min-h-screen bg-gray-100">
                 <Routes>
-
                     {/* ================= Public Routes ================= */}
 
-                    <Route path="/" element={<Home />} />
+                    <Route
+                        path="/"
+                        element={<Home />}
+                    />
 
                     <Route
                         path="/login"
@@ -44,13 +49,29 @@ function App() {
                     />
 
                     <Route
+                        path="/forgot-password"
+                        element={
+                            <ForgotPassword />
+                        }
+                    />
+
+                    <Route
+                        path="/reset-password/:token"
+                        element={
+                            <ResetPassword />
+                        }
+                    />
+
+                    <Route
                         path="/cart"
                         element={<Cart />}
                     />
 
                     <Route
                         path="/product/:id"
-                        element={<ProductDetails />}
+                        element={
+                            <ProductDetails />
+                        }
                     />
 
                     {/* ================= Protected User Routes ================= */}
@@ -129,6 +150,14 @@ function App() {
                         }
                     />
 
+                    <Route
+                        path="/admin/coupons"
+                        element={
+                            <AdminRoute>
+                                <AdminCoupons />
+                            </AdminRoute>
+                        }
+                    />
                 </Routes>
             </main>
 

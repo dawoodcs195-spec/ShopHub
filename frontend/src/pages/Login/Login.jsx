@@ -38,10 +38,10 @@ const Login = () => {
             login(data.user, data.token);
 
             navigate("/");
-
         } catch (err) {
             setError(
-                err.response?.data?.message || "Login failed."
+                err.response?.data?.message ||
+                    "Login failed."
             );
         } finally {
             setLoading(false);
@@ -50,7 +50,6 @@ const Login = () => {
 
     return (
         <div className="max-w-md mx-auto mt-16 bg-white shadow-lg rounded-xl p-8">
-
             <h1 className="text-3xl font-bold text-center mb-6">
                 Login
             </h1>
@@ -61,8 +60,10 @@ const Login = () => {
                 </div>
             )}
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-
+            <form
+                onSubmit={handleSubmit}
+                className="space-y-4"
+            >
                 <input
                     type="email"
                     name="email"
@@ -83,14 +84,24 @@ const Login = () => {
                     required
                 />
 
+                <div className="text-right">
+                    <Link
+                        to="/forgot-password"
+                        className="text-sm text-blue-600 hover:underline"
+                    >
+                        Forgot Password?
+                    </Link>
+                </div>
+
                 <button
                     type="submit"
                     disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700"
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60"
                 >
-                    {loading ? "Logging in..." : "Login"}
+                    {loading
+                        ? "Logging in..."
+                        : "Login"}
                 </button>
-
             </form>
 
             <p className="text-center mt-5">
@@ -102,7 +113,6 @@ const Login = () => {
                     Register
                 </Link>
             </p>
-
         </div>
     );
 };

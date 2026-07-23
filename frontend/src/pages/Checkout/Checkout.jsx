@@ -6,6 +6,11 @@ import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
 import { createOrder } from "../../services/orderService";
 
+import ShippingForm from "./components/ShippingForm";
+import PaymentMethod from "./components/PaymentMethod";
+import CouponBox from "./components/CouponBox";
+import OrderSummary from "./components/OrderSummary";
+
 const Checkout = () => {
     const navigate = useNavigate();
 
@@ -16,6 +21,8 @@ const Checkout = () => {
         paymentMethod,
         savePaymentMethod,
         clearCart,
+        appliedCoupon,
+        discount,
     } = useCart();
 
     const { token } = useAuth();
@@ -52,7 +59,14 @@ const Checkout = () => {
 
     const shippingPrice = itemsPrice > 0 ? 250 : 0;
     const taxPrice = 0;
-    const totalPrice = itemsPrice + shippingPrice + taxPrice;
+
+    const totalPrice = Math.max(
+        itemsPrice +
+            shippingPrice +
+            taxPrice -
+            discount,
+        0
+    );
 
     const handleShippingSubmit = (e) => {
         e.preventDefault();
@@ -112,6 +126,8 @@ const Checkout = () => {
                 shippingPrice,
                 taxPrice,
                 totalPrice,
+                coupon: appliedCoupon?.code || null,
+                discount,
             };
 
             await createOrder(orderData, token);
@@ -160,118 +176,33 @@ const Checkout = () => {
 
             <div className="grid lg:grid-cols-3 gap-10">
                 <div className="lg:col-span-2 space-y-8">
-                    {/* ================= Shipping Form ================= */}
                     <form
                         onSubmit={handleShippingSubmit}
                         className="bg-white rounded-xl shadow-md p-6 space-y-4"
                     >
-                        <h2 className="text-2xl font-bold mb-4">
-                            Shipping Address
-                        </h2>
-
-                        <div className="grid md:grid-cols-2 gap-4">
-                            <input
-                                type="text"
-                                placeholder="Full Name"
-                                value={fullName}
-                                onChange={(e) =>
-                                    setFullName(e.target.value)
-                                }
-                                className="border rounded-lg px-4 py-2 w-full"
-                            />
-
-                            <input
-                                type="text"
-                                placeholder="Phone"
-                                value={phone}
-                                onChange={(e) =>
-                                    setPhone(e.target.value)
-                                }
-                                className="border rounded-lg px-4 py-2 w-full"
-                            />
-                        </div>
-
-                        <input
-                            type="text"
-                            placeholder="Address"
-                            value={address}
-                            onChange={(e) =>
-                                setAddress(e.target.value)
-                            }
-                            className="border rounded-lg px-4 py-2 w-full"
+                        <ShippingForm
+                            fullName={fullName}
+                            setFullName={setFullName}
+                            phone={phone}
+                            setPhone={setPhone}
+                            address={address}
+                            setAddress={setAddress}
+                            city={city}
+                            setCity={setCity}
+                            postalCode={postalCode}
+                            setPostalCode={setPostalCode}
+                            country={country}
+                            setCountry={setCountry}
                         />
 
-                        <div className="grid md:grid-cols-3 gap-4">
-                            <input
-                                type="text"
-                                placeholder="City"
-                                value={city}
-                                onChange={(e) =>
-                                    setCity(e.target.value)
-                                }
-                                className="border rounded-lg px-4 py-2 w-full"
-                            />
-
-                            <input
-                                type="text"
-                                placeholder="Postal Code"
-                                value={postalCode}
-                                onChange={(e) =>
-                                    setPostalCode(e.target.value)
-                                }
-                                className="border rounded-lg px-4 py-2 w-full"
-                            />
-
-                            <input
-                                type="text"
-                                placeholder="Country"
-                                value={country}
-                                onChange={(e) =>
-                                    setCountry(e.target.value)
-                                }
-                                className="border rounded-lg px-4 py-2 w-full"
-                            />
-                        </div>
-
-                        {/* ================= Payment Method ================= */}
-                        <h2 className="text-2xl font-bold mt-6 mb-4">
-                            Payment Method
-                        </h2>
-
-                        <div className="space-y-3">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="paymentMethod"
-                                    value="Stripe"
-                                    checked={
-                                        selectedPayment === "Stripe"
-                                    }
-                                    onChange={() =>
-                                        setSelectedPayment("Stripe")
-                                    }
-                                />
-                                <span>Stripe (Card Payment)</span>
-                            </label>
-
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="radio"
-                                    name="paymentMethod"
-                                    value="Cash on Delivery"
-                                    checked={
-                                        selectedPayment ===
-                                        "Cash on Delivery"
-                                    }
-                                    onChange={() =>
-                                        setSelectedPayment(
-                                            "Cash on Delivery"
-                                        )
-                                    }
-                                />
-                                <span>Cash on Delivery</span>
-                            </label>
-                        </div>
+                        <PaymentMethod
+                            selectedPayment={
+                                selectedPayment
+                            }
+                            setSelectedPayment={
+                                setSelectedPayment
+                            }
+                        />
 
                         <button
                             type="submit"
@@ -280,56 +211,28 @@ const Checkout = () => {
                         >
                             {processing
                                 ? "Processing..."
-                                : selectedPayment === "Stripe"
+                                : selectedPayment ===
+                                  "Stripe"
                                 ? "Continue to Payment"
                                 : "Place Order"}
                         </button>
                     </form>
+
+                    <CouponBox
+                        totalAmount={
+                            itemsPrice +
+                            shippingPrice +
+                            taxPrice
+                        }
+                    />
                 </div>
 
-                {/* ================= Order Summary ================= */}
-                <div className="bg-white rounded-xl shadow-md p-6 h-fit">
-                    <h2 className="text-2xl font-bold mb-6">
-                        Order Summary
-                    </h2>
-
-                    <div className="space-y-3 mb-4">
-                        {cartItems.map((item) => (
-                            <div
-                                key={item._id}
-                                className="flex justify-between text-sm"
-                            >
-                                <span>
-                                    {item.name} x {item.quantity}
-                                </span>
-                                <span>
-                                    Rs. {item.price * item.quantity}
-                                </span>
-                            </div>
-                        ))}
-                    </div>
-
-                    <hr className="my-4" />
-
-                    <div className="flex justify-between mb-2">
-                        <span>Subtotal</span>
-                        <span>Rs. {itemsPrice}</span>
-                    </div>
-
-                    <div className="flex justify-between mb-2">
-                        <span>Shipping</span>
-                        <span>Rs. {shippingPrice}</span>
-                    </div>
-
-                    <hr className="my-4" />
-
-                    <div className="flex justify-between text-xl font-bold">
-                        <span>Total</span>
-                        <span className="text-blue-600">
-                            Rs. {totalPrice}
-                        </span>
-                    </div>
-                </div>
+                <OrderSummary
+                    cartItems={cartItems}
+                    itemsPrice={itemsPrice}
+                    shippingPrice={shippingPrice}
+                    taxPrice={taxPrice}
+                />
             </div>
         </div>
     );

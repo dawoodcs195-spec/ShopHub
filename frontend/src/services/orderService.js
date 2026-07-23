@@ -24,14 +24,38 @@ export const getMyOrders = async (token) => {
     return response.data.orders;
 };
 
-export const getAllOrders = async (token) => {
+export const getAllOrders = async (
+    token,
+    filters = {}
+) => {
+    const {
+        search = "",
+        orderStatus = "",
+        paymentStatus = "",
+        paymentMethod = "",
+        startDate = "",
+        endDate = "",
+        page = 1,
+        limit = 10,
+    } = filters;
+
     const response = await api.get("/orders", {
         headers: {
             Authorization: `Bearer ${token}`,
         },
+        params: {
+            search,
+            orderStatus,
+            paymentStatus,
+            paymentMethod,
+            startDate,
+            endDate,
+            page,
+            limit,
+        },
     });
 
-    return response.data.orders;
+    return response.data;
 };
 
 export const updateOrderStatus = async (

@@ -41,10 +41,34 @@ export const CartProvider = ({ children }) => {
     });
 
     // ===============================
+    // Applied Coupon
+    // ===============================
+    const [appliedCoupon, setAppliedCoupon] = useState(() => {
+        const savedCoupon =
+            localStorage.getItem("appliedCoupon");
+
+        return savedCoupon
+            ? JSON.parse(savedCoupon)
+            : null;
+    });
+
+    // ===============================
+    // Discount
+    // ===============================
+    const [discount, setDiscount] = useState(() => {
+        return Number(
+            localStorage.getItem("discount") || 0
+        );
+    });
+
+    // ===============================
     // Save Cart
     // ===============================
     useEffect(() => {
-        localStorage.setItem("cart", JSON.stringify(cartItems));
+        localStorage.setItem(
+            "cart",
+            JSON.stringify(cartItems)
+        );
     }, [cartItems]);
 
     // ===============================
@@ -68,6 +92,32 @@ export const CartProvider = ({ children }) => {
     }, [paymentMethod]);
 
     // ===============================
+    // Save Coupon
+    // ===============================
+    useEffect(() => {
+        if (appliedCoupon) {
+            localStorage.setItem(
+                "appliedCoupon",
+                JSON.stringify(appliedCoupon)
+            );
+        } else {
+            localStorage.removeItem(
+                "appliedCoupon"
+            );
+        }
+    }, [appliedCoupon]);
+
+    // ===============================
+    // Save Discount
+    // ===============================
+    useEffect(() => {
+        localStorage.setItem(
+            "discount",
+            discount
+        );
+    }, [discount]);
+
+    // ===============================
     // Add To Cart
     // ===============================
     const addToCart = (product) => {
@@ -82,10 +132,14 @@ export const CartProvider = ({ children }) => {
             );
 
             if (existingItem) {
-                if (existingItem.quantity >= product.stock) {
+                if (
+                    existingItem.quantity >=
+                    product.stock
+                ) {
                     toast.error(
                         `Only ${product.stock} item(s) available in stock.`
                     );
+
                     return prevCart;
                 }
 
@@ -95,13 +149,16 @@ export const CartProvider = ({ children }) => {
                     item._id === product._id
                         ? {
                               ...item,
-                              quantity: item.quantity + 1,
+                              quantity:
+                                  item.quantity + 1,
                           }
                         : item
                 );
             }
 
-            toast.success("Product added to cart.");
+            toast.success(
+                "Product added to cart."
+            );
 
             return [
                 ...prevCart,
@@ -134,6 +191,7 @@ export const CartProvider = ({ children }) => {
                 toast.error(
                     `Only ${product.stock} item(s) available in stock.`
                 );
+
                 return prevCart;
             }
 
@@ -158,21 +216,57 @@ export const CartProvider = ({ children }) => {
             )
         );
 
-        toast.success("Item removed from cart.");
+        toast.success(
+            "Item removed from cart."
+        );
     };
 
     // ===============================
     // Save Shipping Address
     // ===============================
-    const saveShippingAddress = (address) => {
+    const saveShippingAddress = (
+        address
+    ) => {
         setShippingAddress(address);
     };
 
     // ===============================
     // Save Payment Method
     // ===============================
-    const savePaymentMethod = (method) => {
+    const savePaymentMethod = (
+        method
+    ) => {
         setPaymentMethod(method);
+    };
+
+    // ===============================
+    // Apply Coupon
+    // ===============================
+    const applyCoupon = (
+        coupon,
+        discountAmount
+    ) => {
+        setAppliedCoupon(coupon);
+        setDiscount(discountAmount);
+
+        toast.success(
+            `Coupon "${coupon.code}" applied successfully.`
+        );
+    };
+
+    // ===============================
+    // Clear Coupon
+    // ===============================
+    const clearCoupon = () => {
+        setAppliedCoupon(null);
+        setDiscount(0);
+
+        localStorage.removeItem(
+            "appliedCoupon"
+        );
+        localStorage.removeItem(
+            "discount"
+        );
     };
 
     // ===============================
@@ -180,6 +274,9 @@ export const CartProvider = ({ children }) => {
     // ===============================
     const clearCart = () => {
         setCartItems([]);
+
+        clearCoupon();
+
         localStorage.removeItem("cart");
     };
 
@@ -191,10 +288,17 @@ export const CartProvider = ({ children }) => {
                 updateQuantity,
                 removeFromCart,
                 clearCart,
+
                 shippingAddress,
                 saveShippingAddress,
+
                 paymentMethod,
                 savePaymentMethod,
+
+                appliedCoupon,
+                discount,
+                applyCoupon,
+                clearCoupon,
             }}
         >
             {children}
@@ -202,4 +306,5 @@ export const CartProvider = ({ children }) => {
     );
 };
 
-export const useCart = () => useContext(CartContext);
+export const useCart = () =>
+    useContext(CartContext);
