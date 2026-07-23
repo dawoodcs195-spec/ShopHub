@@ -2,8 +2,15 @@ require("dotenv").config();
 
 const express = require("express");
 const cors = require("cors");
+const helmet = require("helmet");
+const rateLimit = require("express-rate-limit");
 
 const connectDB = require("./config/db");
+
+const {
+    notFound,
+    errorHandler,
+} = require("./middleware/errorMiddleware");
 
 const userRoutes = require("./routes/userRoutes");
 const productRoutes = require("./routes/productRoutes");
@@ -18,8 +25,32 @@ const app = express();
 // Connect Database
 connectDB();
 
-// Middleware
+// Security Middleware
+app.use(
+    helmet({
+        crossOriginResourcePolicy: {
+            policy: "cross-origin",
+        },
+    })
+);
+
+// CORS
 app.use(cors());
+
+// Rate Limiter
+const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 300,
+    standardHeaders: true,
+    legacyHeaders: false,
+    message: {
+        success: false,
+        message:
+            "Too many requests. Please try again later.",
+    },
+});
+
+app.use("/api", apiLimiter);
 
 // Stripe webhooks require the raw request body.
 // Register this BEFORE express.json() so the webhook
@@ -47,15 +78,15 @@ app.get("/", (req, res) => {
 });
 
 // 404 Handler
-app.use((req, res) => {
-    res.status(404).json({
-        success: false,
-        message: "Route not found.",
-    });
-});
+app.use(notFound);
+
+// Global Error Handler
+app.use(errorHandler);
 
 const PORT = process.env.PORT || 5000;
 
 app.listen(PORT, () => {
-    console.log(`✅ Server is running on port ${PORT}`);
+    console.log(
+        `✅ Server is running on port ${PORT}`
+    );
 });

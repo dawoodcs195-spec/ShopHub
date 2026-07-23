@@ -83,7 +83,7 @@ const AdminOrdersFilters = ({
                         Stripe
                     </option>
 
-                    <option value="COD">
+                    <option value="Cash on Delivery">
                         Cash On Delivery
                     </option>
                 </select>
