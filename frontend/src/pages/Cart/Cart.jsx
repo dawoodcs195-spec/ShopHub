@@ -1,11 +1,20 @@
+import { useEffect, useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { FaPlus, FaMinus, FaTrash, FaShoppingBag } from "react-icons/fa";
 
 import { useCart } from "../../context/CartContext";
+import { getProducts } from "../../services/productService";
+
+import ProductCard from "../../components/products/ProductCard";
+import SkeletonProductCard from "../../components/products/SkeletonProductCard";
+import Reveal from "../../components/common/Reveal";
 
 const Cart = () => {
     const { cartItems, removeFromCart, updateQuantity } = useCart();
+
+    const [recommended, setRecommended] = useState([]);
+    const [recLoading, setRecLoading] = useState(false);
 
     const itemsPrice = cartItems.reduce(
         (total, item) => total + item.price * item.quantity,
@@ -13,6 +22,64 @@ const Cart = () => {
     );
     const shippingPrice = itemsPrice > 0 ? 250 : 0;
     const totalPrice = itemsPrice + shippingPrice;
+
+    const cartIds = useMemo(
+        () => new Set(cartItems.map((i) => i._id)),
+        [cartItems]
+    );
+
+    const primaryCategory = useMemo(() => {
+        // Choose the most common category in cart (if available)
+        const counts = new Map();
+        for (const item of cartItems) {
+            if (!item?.category) continue;
+            counts.set(item.category, (counts.get(item.category) || 0) + 1);
+        }
+
+        let best = "";
+        let bestCount = 0;
+
+        for (const [cat, count] of counts.entries()) {
+            if (count > bestCount) {
+                best = cat;
+                bestCount = count;
+            }
+        }
+
+        return best || "";
+    }, [cartItems]);
+
+    useEffect(() => {
+        const loadRecommended = async () => {
+            if (cartItems.length === 0) return;
+
+            try {
+                setRecLoading(true);
+
+                const data = await getProducts({
+                    category: primaryCategory || undefined,
+                    sort: "rating",
+                    limit: 12,
+                    page: 1,
+                });
+
+                const list = Array.isArray(data?.products) ? data.products : [];
+
+                const filtered = list
+                    .filter((p) => p?._id && !cartIds.has(p._id))
+                    .slice(0, 4);
+
+                setRecommended(filtered);
+            } catch (err) {
+                console.error(err);
+                setRecommended([]);
+            } finally {
+                setRecLoading(false);
+            }
+        };
+
+        loadRecommended();
+    }, [cartItems.length, primaryCategory, cartIds]);
 
     const containerVariants = {
         hidden: { opacity: 0 },
@@ -54,6 +121,9 @@ const Cart = () => {
                     <h1 className="text-4xl font-serif font-bold text-text-primary">
                         Shopping Cart
                     </h1>
+                    <p className="mt-3 text-text-secondary">
+                        Your selected creations, ready whenever you are.
+                    </p>
                 </div>
 
                 <div className="grid lg:grid-cols-3 lg:gap-12">
@@ -163,6 +233,15 @@ const Cart = () => {
                                 );
                             })}
                         </AnimatePresence>
+
+                        <div className="pt-2">
+                            <Link
+                                to="/"
+                                className="inline-flex text-sm font-semibold text-[#B76E79] hover:underline"
+                            >
+                                Continue exploring creations
+                            </Link>
+                        </div>
                     </motion.div>
 
                     {/* Order Summary */}
@@ -203,9 +282,49 @@ const Cart = () => {
                             >
                                 Proceed to Checkout
                             </Link>
+
+                            <p className="mt-4 text-xs text-text-secondary text-center">
+                                Secure checkout • Carefully packed • Handmade with love
+                            </p>
                         </div>
                     </div>
                 </div>
+
+                {/* Recommended Creations */}
+                <Reveal>
+                    <section className="mt-16">
+                        <div className="flex items-end justify-between gap-6 mb-8">
+                            <div>
+                                <h2 className="text-3xl sm:text-4xl font-serif font-bold text-[#2D2A26]">
+                                    Recommended Creations
+                                </h2>
+                                <p className="mt-3 text-[#6B655F]">
+                                    A few pieces you may love—curated to complement your cart.
+                                </p>
+                            </div>
+                        </div>
+
+                        {recLoading ? (
+                            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                                {Array.from({ length: 4 }).map((_, i) => (
+                                    <SkeletonProductCard key={i} />
+                                ))}
+                            </div>
+                        ) : recommended.length === 0 ? (
+                            <div className="rounded-[28px] border border-[#EFE6DC] bg-white p-10 text-center shadow-sm">
+                                <p className="text-[#6B655F]">
+                                    No recommendations available right now.
+                                </p>
+                            </div>
+                        ) : (
+                            <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
+                                {recommended.map((p) => (
+                                    <ProductCard key={p._id} product={p} />
+                                ))}
+                            </div>
+                        )}
+                    </section>
+                </Reveal>
             </div>
         </div>
     );
