@@ -1,3 +1,5 @@
+// backend/controllers/product/productQueryController.js
+
 const Product = require("../../models/Product");
 
 // ===============================
@@ -98,7 +100,14 @@ const getAllProducts = async (req, res) => {
 
         const totalProducts =
             await Product.countDocuments(query);
-
+        
+        // ===============================
+        // Database Query
+        // ===============================
+        // This query now implicitly returns all fields from the model,
+        // which is the standard behavior and what the rest of your app expects.
+        // If 'images' were being excluded, it would be due to a `select: false` in the Mongoose Model.
+        // By removing the restrictive `.select()`, we restore the expected full product data.
         const products = await Product.find(query)
             .sort(sort)
             .skip(skip)

@@ -1,118 +1,78 @@
-const AdminOrdersFilters = ({
-    filters,
-    onFilterChange,
-    onClearFilters,
-}) => {
-    const handleChange = (field) => (e) => {
-        onFilterChange(field, e.target.value);
+import { FaFileCsv, FaFilePdf, FaUndo } from 'react-icons/fa';
+import Input from '../../../components/forms/Input';
+import Select from '../../../components/forms/Select';
+import { exportOrdersCsv } from "../../../utils/exportOrdersCsv";
+import { exportOrdersPdf } from "../../../utils/exportOrdersPdf";
+
+const AdminOrdersFilters = ({ filters, onFilterChange, onClearFilters, ordersToExport }) => {
+    const handleChange = (e) => {
+        onFilterChange(e.target.name, e.target.value);
     };
 
     return (
-        <div className="bg-white rounded-xl shadow p-6 mb-6">
-            <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-6 gap-4">
-                <input
-                    type="text"
-                    placeholder="Search by name, email or order ID"
-                    value={filters.search}
-                    onChange={handleChange("search")}
-                    className="border rounded-lg px-3 py-2 lg:col-span-2"
-                />
-
-                <select
-                    value={filters.orderStatus}
-                    onChange={handleChange("orderStatus")}
-                    className="border rounded-lg px-3 py-2"
-                >
-                    <option value="">
-                        All Order Status
-                    </option>
-
-                    <option value="Pending">
-                        Pending
-                    </option>
-
-                    <option value="Processing">
-                        Processing
-                    </option>
-
-                    <option value="Shipped">
-                        Shipped
-                    </option>
-
-                    <option value="Delivered">
-                        Delivered
-                    </option>
-
-                    <option value="Cancelled">
-                        Cancelled
-                    </option>
-                </select>
-
-                <select
-                    value={filters.paymentStatus}
-                    onChange={handleChange("paymentStatus")}
-                    className="border rounded-lg px-3 py-2"
-                >
-                    <option value="">
-                        All Payment Status
-                    </option>
-
-                    <option value="Pending">
-                        Pending
-                    </option>
-
-                    <option value="Paid">
-                        Paid
-                    </option>
-
-                    <option value="Failed">
-                        Failed
-                    </option>
-                </select>
-
-                <select
-                    value={filters.paymentMethod}
-                    onChange={handleChange("paymentMethod")}
-                    className="border rounded-lg px-3 py-2"
-                >
-                    <option value="">
-                        All Payment Methods
-                    </option>
-
-                    <option value="Stripe">
-                        Stripe
-                    </option>
-
-                    <option value="Cash on Delivery">
-                        Cash On Delivery
-                    </option>
-                </select>
-
-                <div className="flex gap-2">
-                    <input
-                        type="date"
-                        value={filters.startDate}
-                        onChange={handleChange("startDate")}
-                        className="border rounded-lg px-3 py-2 w-full"
-                    />
-
-                    <input
-                        type="date"
-                        value={filters.endDate}
-                        onChange={handleChange("endDate")}
-                        className="border rounded-lg px-3 py-2 w-full"
+        <div className="bg-surface rounded-lg shadow-soft p-6 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 xl:grid-cols-6 gap-4 items-end">
+                <div className="xl:col-span-2">
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Search</label>
+                    <Input
+                        type="text"
+                        name="search"
+                        placeholder="By customer, email or ID..."
+                        value={filters.search}
+                        onChange={handleChange}
                     />
                 </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Order Status</label>
+                    <Select name="orderStatus" value={filters.orderStatus} onChange={handleChange}>
+                        <option value="">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Processing">Processing</option>
+                        <option value="Shipped">Shipped</option>
+                        <option value="Delivered">Delivered</option>
+                        <option value="Cancelled">Cancelled</option>
+                    </Select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Payment Status</label>
+                    <Select name="paymentStatus" value={filters.paymentStatus} onChange={handleChange}>
+                        <option value="">All</option>
+                        <option value="Pending">Pending</option>
+                        <option value="Paid">Paid</option>
+                        <option value="Failed">Failed</option>
+                    </Select>
+                </div>
+                <div>
+                    <label className="block text-sm font-medium text-text-secondary mb-1">Payment Method</label>
+                     <Select name="paymentMethod" value={filters.paymentMethod} onChange={handleChange}>
+                        <option value="">All</option>
+                        <option value="Stripe">Stripe</option>
+                        <option value="Cash on Delivery">Cash on Delivery</option>
+                    </Select>
+                </div>
+                <div className="flex gap-2">
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">Start Date</label>
+                        <Input type="date" name="startDate" value={filters.startDate} onChange={handleChange} />
+                    </div>
+                    <div>
+                        <label className="block text-sm font-medium text-text-secondary mb-1">End Date</label>
+                        <Input type="date" name="endDate" value={filters.endDate} onChange={handleChange} />
+                    </div>
+                </div>
             </div>
-
-            <div className="mt-4 flex justify-end">
-                <button
-                    type="button"
-                    onClick={onClearFilters}
-                    className="text-sm font-semibold text-blue-600 hover:text-blue-700"
-                >
-                    Clear Filters
+            <div className="flex flex-col sm:flex-row gap-4 mt-6 pt-6 border-t border-border">
+                <button onClick={onClearFilters} className="flex items-center justify-center gap-2 text-sm font-semibold text-primary hover:text-primary-hover transition-colors">
+                    <FaUndo /> Reset Filters
                 </button>
+                <div className="sm:ml-auto flex gap-3">
+                     <button onClick={() => exportOrdersCsv(ordersToExport)} className="flex items-center gap-2 text-sm bg-green-600/10 text-green-700 font-semibold px-4 py-2 rounded-lg hover:bg-green-600/20">
+                        <FaFileCsv/> Export CSV
+                    </button>
+                    <button onClick={() => exportOrdersPdf(ordersToExport)} className="flex items-center gap-2 text-sm bg-red-600/10 text-red-700 font-semibold px-4 py-2 rounded-lg hover:bg-red-600/20">
+                        <FaFilePdf/> Export PDF
+                    </button>
+                </div>
             </div>
         </div>
     );

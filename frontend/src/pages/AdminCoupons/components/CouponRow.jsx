@@ -1,214 +1,67 @@
-import { useState } from "react";
+import { memo } from "react";
 import { FiEdit2, FiTrash2 } from "react-icons/fi";
 import toast from "react-hot-toast";
 
 import { useAuth } from "../../../context/AuthContext";
-import {
-    updateCoupon,
-    deleteCoupon,
-} from "../../../services/couponService";
+import { deleteCoupon, updateCoupon } from "../../../services/couponService";
 
-const CouponRow = ({
-    coupon,
-    onRefresh,
-    onEdit,
-}) => {
+const CouponRow = ({ coupon, onEdit, onRefresh }) => {
     const { token } = useAuth();
 
-    const [loading, setLoading] =
-        useState(false);
-
-    const expiryDate = new Date(
-        coupon.expiryDate
-    );
-
-    const today = new Date();
-
-    const daysRemaining = Math.ceil(
-        (expiryDate - today) /
-            (1000 * 60 * 60 * 24)
-    );
-
-    let expiryBadge = {
-        text: "Active",
-        className:
-            "bg-green-100 text-green-700",
-    };
-
-    if (daysRemaining < 0) {
-        expiryBadge = {
-            text: "Expired",
-            className:
-                "bg-red-100 text-red-700",
-        };
-    } else if (daysRemaining <= 7) {
-        expiryBadge = {
-            text: "Expiring Soon",
-            className:
-                "bg-yellow-100 text-yellow-700",
-        };
-    }
-
-    const handleToggleStatus =
-        async () => {
-            try {
-                setLoading(true);
-
-                await updateCoupon(
-                    coupon._id,
-                    {
-                        isActive:
-                            !coupon.isActive,
-                    },
-                    token
-                );
-
-                toast.success(
-                    `Coupon ${
-                        coupon.isActive
-                            ? "disabled"
-                            : "enabled"
-                    }.`
-                );
-
-                onRefresh();
-            } catch (error) {
-                toast.error(
-                    error.response?.data
-                        ?.message ||
-                        "Failed to update coupon."
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+    const expiryDate = new Date(coupon.expiryDate);
+    const isExpired = expiryDate < new Date();
 
     const handleDelete = async () => {
-        const confirmed = window.confirm(
-            "Delete this coupon?"
-        );
-
-        if (!confirmed) {
-            return;
-        }
-
-        try {
-            setLoading(true);
-
-            await deleteCoupon(
-                coupon._id,
-                token
-            );
-
-            toast.success(
-                "Coupon deleted."
-            );
-
-            onRefresh();
-        } catch (error) {
-            toast.error(
-                error.response?.data
-                    ?.message ||
-                    "Failed to delete coupon."
-            );
-        } finally {
-            setLoading(false);
+        if (window.confirm(`Are you sure you want to delete the coupon "${coupon.code}"?`)) {
+            try {
+                await deleteCoupon(coupon._id, token);
+                toast.success("Coupon deleted successfully.");
+                onRefresh();
+            } catch (error) {
+                toast.error(error.response?.data?.message || "Failed to delete coupon.");
+            }
         }
     };
 
+    const handleToggleStatus = async () => {
+        try {
+            await updateCoupon(coupon._id, { isActive: !coupon.isActive }, token);
+            toast.success(`Coupon ${!coupon.isActive ? 'activated' : 'deactivated'}.`);
+            onRefresh();
+        } catch (error) {
+            toast.error("Failed to update status.");
+        }
+    };
+    
     return (
-        <tr className="border-b hover:bg-gray-50">
-            <td className="py-4 font-semibold">
-                {coupon.code}
+        <tr className="border-b border-border hover:bg-background/50 transition-colors">
+            <td className="px-4 py-3 font-mono text-sm text-primary font-semibold">{coupon.code}</td>
+            <td className="px-4 py-3 text-sm text-text-secondary capitalize">{coupon.type}</td>
+            <td className="px-4 py-3 text-sm text-text-primary font-semibold">
+                {coupon.type === "percentage" ? `${coupon.value}%` : `Rs. ${coupon.value}`}
             </td>
-
-            <td className="py-4 capitalize">
-                {coupon.type}
-            </td>
-
-            <td className="py-4">
-                {coupon.type ===
-                "percentage"
-                    ? `${coupon.value}%`
-                    : `Rs. ${coupon.value}`}
-            </td>
-
-            <td className="py-4">
-                Rs.{" "}
-                {coupon.minimumAmount}
-            </td>
-
-            <td className="py-4">
-                <span className="px-3 py-1 rounded-full bg-blue-100 text-blue-700 text-sm font-semibold">
-                    {coupon.usedCount} /{" "}
-                    {coupon.usageLimit}
+            <td className="px-4 py-3 text-sm text-text-secondary">{coupon.usedCount} / {coupon.usageLimit}</td>
+            <td className="px-4 py-3 text-sm text-text-secondary">{expiryDate.toLocaleDateString()}</td>
+            <td className="px-4 py-3">
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                    !coupon.isActive ? 'bg-red-100 text-red-700' : isExpired ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700'
+                }`}>
+                    {!coupon.isActive ? 'Inactive' : isExpired ? 'Expired' : 'Active'}
                 </span>
             </td>
-
-            <td className="py-4">
-                {coupon.usageLimit}
+            <td className="px-4 py-3">
+                 <label className="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" checked={coupon.isActive} onChange={handleToggleStatus} className="sr-only peer" />
+                    <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-focus:ring-2 peer-focus:ring-primary/50 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+                </label>
             </td>
-
-            <td className="py-4">
-                <div className="space-y-2">
-                    <p>
-                        {expiryDate.toLocaleDateString()}
-                    </p>
-
-                    <span
-                        className={`inline-block px-2 py-1 rounded-full text-xs font-semibold ${expiryBadge.className}`}
-                    >
-                        {expiryBadge.text}
-                    </span>
-                </div>
-            </td>
-
-            <td className="py-4">
-                <button
-                    type="button"
-                    disabled={loading}
-                    onClick={
-                        handleToggleStatus
-                    }
-                    className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                        coupon.isActive
-                            ? "bg-green-100 text-green-700"
-                            : "bg-red-100 text-red-700"
-                    }`}
-                >
-                    {coupon.isActive
-                        ? "Active"
-                        : "Inactive"}
-                </button>
-            </td>
-
-            <td className="py-4">
-                <div className="flex items-center gap-3">
-                    <button
-                        type="button"
-                        onClick={() =>
-                            onEdit?.(coupon)
-                        }
-                        className="text-blue-600 hover:text-blue-700"
-                        title="Edit Coupon"
-                    >
-                        <FiEdit2
-                            size={18}
-                        />
+            <td className="px-4 py-3">
+                <div className="flex items-center gap-4">
+                    <button onClick={() => onEdit(coupon)} className="text-text-secondary hover:text-primary transition-colors" title="Edit Coupon">
+                        <FiEdit2 size={16} />
                     </button>
-
-                    <button
-                        type="button"
-                        disabled={loading}
-                        onClick={
-                            handleDelete
-                        }
-                        className="text-red-600 hover:text-red-700"
-                        title="Delete Coupon"
-                    >
-                        <FiTrash2
-                            size={18}
-                        />
+                    <button onClick={handleDelete} className="text-text-secondary hover:text-accent transition-colors" title="Delete Coupon">
+                        <FiTrash2 size={16} />
                     </button>
                 </div>
             </td>
@@ -216,4 +69,4 @@ const CouponRow = ({
     );
 };
 
-export default CouponRow;
+export default memo(CouponRow);

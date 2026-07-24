@@ -1,84 +1,36 @@
+import { memo } from 'react';
 import AdminOrderRow from "./AdminOrderRow";
 
-const AdminOrdersTable = ({
-    orders,
-    onStatusChange,
-}) => {
+const AdminOrdersTable = ({ orders, onStatusChange }) => {
     if (orders.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow p-12 text-center">
-                <h3 className="text-xl font-semibold text-gray-700">
-                    No orders found
-                </h3>
-
-                <p className="text-gray-500 mt-2">
-                    Try changing your search or filters.
-                </p>
+            <div className="bg-surface rounded-lg shadow-soft p-12 text-center">
+                <h3 className="text-xl font-serif font-semibold text-text-primary">No Orders Found</h3>
+                <p className="text-text-secondary mt-2">Try adjusting or clearing your filters to see more results.</p>
             </div>
         );
     }
 
     return (
-        <div className="overflow-x-auto bg-white rounded-xl shadow">
-            <table className="min-w-full">
-                <thead className="bg-blue-600 text-white">
+        <div className="overflow-x-auto bg-surface rounded-lg shadow-soft">
+            <table className="min-w-full divide-y divide-border">
+                <thead className="bg-background">
                     <tr>
-                        <th className="p-4 text-left">
-                            Order ID
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Date
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Customer
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Items
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Total
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Payment Method
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Payment Status
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Transaction
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Paid At
-                        </th>
-
-                        <th className="p-4 text-left">
-                            Order Status
-                        </th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Order ID</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Date</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Customer</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Total</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Payment</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Method</th>
+                        <th className="px-4 py-3 text-left text-xs font-semibold text-text-secondary uppercase tracking-wider">Order Status</th>
                     </tr>
                 </thead>
-
-                <tbody>
+                <tbody className="divide-y divide-border">
                     {orders.map((order) => (
                         <AdminOrderRow
                             key={order._id}
-                            order={{
-                                ...order,
-                                shortId:
-                                    order._id.slice(
-                                        -8
-                                    ),
-                            }}
-                            onStatusChange={
-                                onStatusChange
-                            }
+                            order={order}
+                            onStatusChange={onStatusChange}
                         />
                     ))}
                 </tbody>
@@ -87,4 +39,4 @@ const AdminOrdersTable = ({
     );
 };
 
-export default AdminOrdersTable;
+export default memo(AdminOrdersTable);

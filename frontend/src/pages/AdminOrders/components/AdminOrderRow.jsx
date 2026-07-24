@@ -1,125 +1,58 @@
-const AdminOrderRow = ({
-    order,
-    onStatusChange,
-}) => {
-    const getPaymentBadge = (status) => {
-        switch (status) {
-            case "Paid":
-                return "bg-green-100 text-green-700";
+import { memo, useMemo } from 'react';
+import Select from '../../../components/forms/Select';
 
-            case "Failed":
-                return "bg-red-100 text-red-700";
+const getPaymentStatusPill = (status) => {
+    switch (status) {
+        case "Paid": return "bg-green-100 text-green-700";
+        case "Failed": return "bg-red-100 text-red-700";
+        default: return "bg-yellow-100 text-yellow-700";
+    }
+};
 
-            default:
-                return "bg-yellow-100 text-yellow-700";
-        }
-    };
+const getOrderStatusPill = (status) => {
+    switch (status) {
+        case "Delivered": return "bg-green-100 text-green-700";
+        case "Shipped": return "bg-blue-100 text-blue-700";
+        case "Processing": return "bg-yellow-100 text-yellow-700";
+        case "Cancelled": return "bg-red-100 text-red-700";
+        default: return "bg-gray-100 text-gray-700";
+    }
+};
 
+const AdminOrderRow = ({ order, onStatusChange }) => {
+    const shortId = useMemo(() => order._id.slice(-6).toUpperCase(), [order._id]);
+    const createdAtDate = useMemo(() => new Date(order.createdAt).toLocaleDateString(), [order.createdAt]);
+    
     return (
-        <tr className="border-b hover:bg-gray-50 transition-colors">
-            <td className="p-4 font-medium text-gray-700 whitespace-nowrap">
-                #{order.shortId}
+        <tr className="border-b border-border hover:bg-background transition-colors">
+            <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-primary font-semibold">#{shortId}</td>
+            <td className="px-4 py-3 whitespace-nowrap text-sm text-text-secondary">{createdAtDate}</td>
+            <td className="px-4 py-3">
+                <div className="font-semibold text-text-primary">{order.user?.name}</div>
+                <div className="text-sm text-text-secondary">{order.user?.email}</div>
             </td>
-
-            <td className="p-4 whitespace-nowrap">
-                {new Date(
-                    order.createdAt
-                ).toLocaleDateString()}
-            </td>
-
-            <td className="p-4">
-                <div className="font-semibold">
-                    {order.user?.name}
-                </div>
-
-                <div className="text-sm text-gray-500">
-                    {order.user?.email}
-                </div>
-            </td>
-
-            <td className="p-4 text-center">
-                {order.orderItems.length}
-            </td>
-
-            <td className="p-4 font-semibold text-blue-600 whitespace-nowrap">
-                Rs. {order.totalPrice}
-            </td>
-
-            <td className="p-4 whitespace-nowrap">
-                {order.paymentMethod}
-            </td>
-
-            <td className="p-4">
-                <span
-                    className={`inline-flex px-3 py-1 rounded-full text-sm font-semibold ${getPaymentBadge(
-                        order.paymentStatus
-                    )}`}
-                >
+            <td className="px-4 py-3 whitespace-nowrap text-text-primary font-semibold">Rs. {order.totalPrice.toLocaleString()}</td>
+            <td className="px-4 py-3">
+                <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${getPaymentStatusPill(order.paymentStatus)}`}>
                     {order.paymentStatus}
                 </span>
             </td>
-
-            <td className="p-4">
-                {order.transactionId ? (
-                    <div
-                        className="max-w-[180px] truncate"
-                        title={order.transactionId}
-                    >
-                        {order.transactionId}
-                    </div>
-                ) : (
-                    <span className="text-gray-400">
-                        —
-                    </span>
-                )}
-            </td>
-
-            <td className="p-4 whitespace-nowrap">
-                {order.paidAt ? (
-                    new Date(
-                        order.paidAt
-                    ).toLocaleString()
-                ) : (
-                    <span className="text-gray-400">
-                        Not Paid
-                    </span>
-                )}
-            </td>
-
-            <td className="p-4">
-                <select
+            <td className="px-4 py-3 text-sm text-text-secondary">{order.paymentMethod}</td>
+            <td className="px-4 py-3">
+                 <Select
                     value={order.orderStatus}
-                    onChange={(e) =>
-                        onStatusChange(
-                            order._id,
-                            e.target.value
-                        )
-                    }
-                    className="border rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) => onStatusChange(order._id, e.target.value)}
+                    className={`text-xs font-semibold !py-1 !px-2 ${getOrderStatusPill(order.orderStatus)}`}
                 >
-                    <option value="Pending">
-                        Pending
-                    </option>
-
-                    <option value="Processing">
-                        Processing
-                    </option>
-
-                    <option value="Shipped">
-                        Shipped
-                    </option>
-
-                    <option value="Delivered">
-                        Delivered
-                    </option>
-
-                    <option value="Cancelled">
-                        Cancelled
-                    </option>
-                </select>
+                    <option value="Pending">Pending</option>
+                    <option value="Processing">Processing</option>
+                    <option value="Shipped">Shipped</option>
+                    <option value="Delivered">Delivered</option>
+                    <option value="Cancelled">Cancelled</option>
+                </Select>
             </td>
         </tr>
     );
 };
 
-export default AdminOrderRow;
+export default memo(AdminOrderRow);

@@ -5,29 +5,19 @@ const Coupon = require("../models/Coupon");
 // ===============================
 const createCoupon = async (req, res) => {
     try {
-        const {
-            code,
-            type,
-            value,
-            minimumAmount,
-            expiryDate,
-            usageLimit,
-            description,
-        } = req.body;
+        const { code, type, value, minimumAmount, expiryDate, usageLimit, description } = req.body;
 
-        const existingCoupon = await Coupon.findOne({
-            code: code.toUpperCase().trim(),
-        });
+        const existingCoupon = await Coupon.findOne({ code: code }); // Already uppercased by validator
 
         if (existingCoupon) {
             return res.status(400).json({
                 success: false,
-                message: "Coupon already exists.",
+                message: "A coupon with this code already exists.",
             });
         }
 
         const coupon = await Coupon.create({
-            code: code.toUpperCase().trim(),
+            code,
             type,
             value,
             minimumAmount,
@@ -54,9 +44,7 @@ const createCoupon = async (req, res) => {
 // ===============================
 const getCoupons = async (req, res) => {
     try {
-        const coupons = await Coupon.find().sort({
-            createdAt: -1,
-        });
+        const coupons = await Coupon.find().sort({ createdAt: -1 });
 
         return res.status(200).json({
             success: true,
@@ -111,13 +99,21 @@ const updateCoupon = async (req, res) => {
             });
         }
 
-        Object.assign(coupon, req.body);
-
-        if (req.body.code) {
-            coupon.code = req.body.code
-                .toUpperCase()
-                .trim();
+        // Custom logic: if code is changing, check for conflicts
+        if (req.body.code && req.body.code !== coupon.code) {
+             const existingCoupon = await Coupon.findOne({ code: req.body.code });
+             if (existingCoupon) {
+                return res.status(400).json({
+                    success: false,
+                    message: "Another coupon with this code already exists.",
+                });
+            }
         }
+        
+        // Update fields provided in the request body
+        Object.keys(req.body).forEach(key => {
+            coupon[key] = req.body[key];
+        });
 
         await coupon.save();
 
@@ -169,57 +165,43 @@ const validateCoupon = async (req, res) => {
     try {
         const { code, total } = req.body;
 
-        const coupon = await Coupon.findOne({
-            code: code.toUpperCase().trim(),
-        });
+        const coupon = await Coupon.findOne({ code: code }); // Already uppercased
 
         if (!coupon) {
-            return res.status(404).json({
-                success: false,
-                message: "Invalid coupon.",
-            });
+            return res.status(404).json({ success: false, message: "Invalid coupon code." });
         }
 
         if (!coupon.isActive) {
-            return res.status(400).json({
-                success: false,
-                message: "Coupon is inactive.",
-            });
+            return res.status(400).json({ success: false, message: "This coupon is currently inactive." });
         }
 
         if (coupon.expiryDate < new Date()) {
-            return res.status(400).json({
-                success: false,
-                message: "Coupon has expired.",
-            });
+            return res.status(400).json({ success: false, message: "This coupon has expired." });
         }
 
         if (coupon.usedCount >= coupon.usageLimit) {
-            return res.status(400).json({
-                success: false,
-                message: "Coupon usage limit reached.",
-            });
+            return res.status(400).json({ success: false, message: "This coupon has reached its usage limit." });
         }
 
         if (total < coupon.minimumAmount) {
             return res.status(400).json({
                 success: false,
-                message: `Minimum purchase amount is Rs. ${coupon.minimumAmount}.`,
+                message: `A minimum purchase of Rs. ${coupon.minimumAmount} is required to use this coupon.`,
             });
         }
 
         let discount = 0;
-
         if (coupon.type === "percentage") {
             discount = (total * coupon.value) / 100;
         } else {
             discount = coupon.value;
         }
 
-        discount = Math.min(discount, total);
+        discount = Math.min(discount, total); // Discount cannot be more than the total
 
         return res.status(200).json({
             success: true,
+            message: "Coupon applied successfully!",
             coupon,
             discount,
             finalTotal: total - discount,

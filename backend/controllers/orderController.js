@@ -30,35 +30,19 @@ const createOrder = async (req, res) => {
             discount,
         } = req.body;
 
-        if (!orderItems || orderItems.length === 0) {
-            return res.status(400).json({
-                success: false,
-                message: "No order items.",
-            });
-        }
-
         let isPaid = false;
         let paidAt = null;
         let paymentStatus = "Pending";
         let transactionId = "";
 
+        // Verify payment with Stripe if that's the chosen method
         if (paymentMethod === "Stripe") {
-            if (!paymentIntentId) {
-                return res.status(400).json({
-                    success: false,
-                    message: "Payment Intent ID is required.",
-                });
-            }
-
-            const paymentIntent =
-                await stripe.paymentIntents.retrieve(
-                    paymentIntentId
-                );
+            const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
 
             if (paymentIntent.status !== "succeeded") {
                 return res.status(400).json({
                     success: false,
-                    message: "Stripe payment verification failed.",
+                    message: "Stripe payment verification failed. Payment was not successful.",
                 });
             }
 
@@ -68,34 +52,31 @@ const createOrder = async (req, res) => {
             transactionId = paymentIntent.id;
         }
 
+        // Check stock and update product quantities
         for (const item of orderItems) {
-            const product = await Product.findById(
-                item.product
-            );
+            const product = await Product.findById(item.product);
 
             if (!product) {
                 return res.status(404).json({
                     success: false,
-                    message: `${item.name} not found.`,
+                    message: `Product with ID ${item.product} not found.`,
                 });
             }
 
             if (product.stock < item.quantity) {
                 return res.status(400).json({
                     success: false,
-                    message: `Only ${product.stock} ${product.name} left in stock.`,
+                    message: `Not enough stock for ${product.name}. Only ${product.stock} left.`,
                 });
             }
+            // Defer saving until all checks pass
         }
 
+        // All checks passed, now update stock
         for (const item of orderItems) {
-            const product = await Product.findById(
-                item.product
-            );
-
-            product.stock -= item.quantity;
-
-            await product.save();
+            await Product.findByIdAndUpdate(item.product, {
+                $inc: { stock: -item.quantity },
+            });
         }
 
         const order = await Order.create({
@@ -115,41 +96,18 @@ const createOrder = async (req, res) => {
             totalPrice,
         });
 
+        // Update coupon usage count if applicable
         if (coupon) {
-            const couponDoc =
-                await Coupon.findOne({
-                    code: coupon,
-                });
-
-            if (couponDoc) {
-                couponDoc.usedCount += 1;
-
-                await couponDoc.save();
-            }
+            await Coupon.updateOne({ code: coupon }, { $inc: { usedCount: 1 } });
         }
 
+        // Send confirmation emails
         try {
-            await sendOrderConfirmationEmail(
-                req.user,
-                order
-            );
+            await sendOrderConfirmationEmail(req.user, order);
+            await sendAdminNewOrderEmail(req.user, order);
         } catch (emailError) {
-            console.error(
-                "Order confirmation email failed:",
-                emailError.message
-            );
-        }
-
-        try {
-            await sendAdminNewOrderEmail(
-                req.user,
-                order
-            );
-        } catch (emailError) {
-            console.error(
-                "Admin notification email failed:",
-                emailError.message
-            );
+            console.error("Email sending failed after order creation:", emailError.message);
+            // Don't fail the request, just log the email error
         }
 
         return res.status(201).json({
@@ -194,14 +152,20 @@ const getMyOrders = async (req, res) => {
 // ======================================
 const getSingleOrder = async (req, res) => {
     try {
-        const order = await Order.findById(
-            req.params.id
-        ).populate("user", "name email");
+        const order = await Order.findById(req.params.id).populate("user", "name email");
 
         if (!order) {
             return res.status(404).json({
                 success: false,
                 message: "Order not found.",
+            });
+        }
+        
+        // Authorization: Check if user is an admin or the owner of the order
+        if (order.user._id.toString() !== req.user._id.toString() && req.user.role !== 'admin') {
+            return res.status(403).json({
+                success: false,
+                message: "Not authorized to view this order.",
             });
         }
 
@@ -263,63 +227,52 @@ const getAllOrders = async (req, res) => {
             }
         }
 
-        let orders = await Order.find(query)
-            .populate("user", "name email")
-            .sort({
-                createdAt: -1,
-            });
-
+        let searchFilter = {};
         if (search.trim()) {
-            const keyword = search
-                .trim()
-                .toLowerCase();
+            const keyword = search.trim();
+            const isMongoId = /^[0-9a-fA-F]{24}$/.test(keyword);
 
-            orders = orders.filter((order) => {
-                const name =
-                    order.user?.name?.toLowerCase() ||
-                    "";
-
-                const email =
-                    order.user?.email?.toLowerCase() ||
-                    "";
-
-                return (
-                    name.includes(keyword) ||
-                    email.includes(keyword) ||
-                    order._id
-                        .toString()
-                        .toLowerCase()
-                        .includes(keyword)
-                );
-            });
+            if (isMongoId) {
+                // If search is a valid MongoID, search by order ID or user ID
+                const users = await User.find({_id: keyword}).select('_id');
+                searchFilter = {
+                    $or: [
+                        { _id: keyword },
+                        { user: { $in: users.map(u => u._id) } },
+                    ],
+                };
+            } else {
+                 // Search user name/email
+                 const users = await User.find({
+                    $or: [
+                        { name: { $regex: keyword, $options: "i" } },
+                        { email: { $regex: keyword, $options: "i" } },
+                    ]
+                }).select('_id');
+                
+                searchFilter = { user: { $in: users.map(u => u._id) } };
+            }
         }
+        
+        const finalQuery = { ...query, ...searchFilter };
 
-        const totalRevenue = orders.reduce(
-            (total, order) =>
-                total + order.totalPrice,
-            0
-        );
-
-        const totalOrders = orders.length;
-
-        const currentPage = Number(page);
-        const pageSize = Number(limit);
-
-        const paginatedOrders = orders.slice(
-            (currentPage - 1) * pageSize,
-            currentPage * pageSize
-        );
+        const totalOrders = await Order.countDocuments(finalQuery);
+        
+        const orders = await Order.find(finalQuery)
+            .populate("user", "name email")
+            .sort({ createdAt: -1 })
+            .limit(Number(limit))
+            .skip((Number(page) - 1) * Number(limit));
 
         return res.status(200).json({
             success: true,
-            totalRevenue,
             count: totalOrders,
-            page: currentPage,
+            page: Number(page),
             totalPages: Math.ceil(
-                totalOrders / pageSize
+                totalOrders / Number(limit)
             ),
-            limit: pageSize,
-            orders: paginatedOrders,
+            limit: Number(limit),
+            orders: orders,
         });
     } catch (error) {
         return res.status(500).json({
@@ -332,14 +285,9 @@ const getAllOrders = async (req, res) => {
 // ======================================
 // Update Order Status (Admin)
 // ======================================
-const updateOrderStatus = async (
-    req,
-    res
-) => {
+const updateOrderStatus = async (req, res) => {
     try {
-        const order = await Order.findById(
-            req.params.id
-        );
+        const order = await Order.findById(req.params.id);
 
         if (!order) {
             return res.status(404).json({
@@ -348,34 +296,25 @@ const updateOrderStatus = async (
             });
         }
 
-        order.orderStatus =
-            req.body.orderStatus;
+        order.orderStatus = req.body.orderStatus;
 
-        if (
-            req.body.orderStatus ===
-            "Delivered"
-        ) {
+        if (req.body.orderStatus === "Delivered") {
             order.isDelivered = true;
             order.deliveredAt = Date.now();
 
-            const user =
-                await User.findById(
-                    order.user
-                );
+            const user = await User.findById(order.user);
 
             if (user) {
                 try {
-                    await sendDeliveredEmail(
-                        user,
-                        order
-                    );
+                    await sendDeliveredEmail(user, order);
                 } catch (emailError) {
-                    console.error(
-                        "Delivered email failed:",
-                        emailError.message
-                    );
+                    console.error("Delivered email failed:", emailError.message);
                 }
             }
+        } else {
+            // If status is changed from Delivered to something else
+            order.isDelivered = false;
+            order.deliveredAt = null;
         }
 
         await order.save();

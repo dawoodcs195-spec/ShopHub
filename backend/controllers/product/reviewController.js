@@ -7,13 +7,6 @@ const createOrUpdateReview = async (req, res) => {
     try {
         const { rating, comment } = req.body;
 
-        if (!rating || !comment) {
-            return res.status(400).json({
-                success: false,
-                message: "Rating and comment are required.",
-            });
-        }
-
         const product = await Product.findById(req.params.id);
 
         if (!product) {
@@ -24,15 +17,12 @@ const createOrUpdateReview = async (req, res) => {
         }
 
         const existingReview = product.reviews.find(
-            (review) =>
-                review.user.toString() ===
-                req.user._id.toString()
+            (review) => review.user.toString() === req.user._id.toString()
         );
 
         if (existingReview) {
             existingReview.rating = Number(rating);
             existingReview.comment = comment;
-            existingReview.name = req.user.name;
         } else {
             product.reviews.push({
                 user: req.user._id,
@@ -43,13 +33,7 @@ const createOrUpdateReview = async (req, res) => {
         }
 
         product.numReviews = product.reviews.length;
-
-        product.rating =
-            product.reviews.reduce(
-                (total, review) =>
-                    total + review.rating,
-                0
-            ) / product.reviews.length;
+        product.rating = product.reviews.reduce((total, review) => total + review.rating, 0) / product.reviews.length;
 
         await product.save();
 

@@ -1,27 +1,24 @@
+import { motion } from 'framer-motion';
+
 const DashboardStats = ({ statCards }) => {
     return (
-        <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-5 gap-6 mb-10">
-            {statCards.map((card) => {
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6 mb-8">
+            {statCards.map((card, index) => {
                 const Icon = card.icon;
-
                 return (
-                    <div
+                    <motion.div
                         key={card.title}
-                        className="bg-white rounded-xl shadow-md p-6 hover:shadow-lg transition-shadow duration-300"
+                        className="bg-surface rounded-lg shadow-soft p-6"
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: index * 0.05 }}
                     >
-                        <Icon
-                            className={`${card.iconColor} mb-4`}
-                            size={38}
-                        />
-
-                        <h2 className="text-gray-500">
-                            {card.title}
-                        </h2>
-
-                        <p className="text-3xl font-bold mt-2">
-                            {card.value}
-                        </p>
-                    </div>
+                        <div className={`w-12 h-12 rounded-full flex items-center justify-center ${card.iconBg}`}>
+                            <Icon className={`${card.iconColor}`} size={24} />
+                        </div>
+                        <p className="text-sm text-text-secondary mt-4">{card.title}</p>
+                        <p className="text-2xl font-bold text-text-primary mt-1">{card.value}</p>
+                    </motion.div>
                 );
             })}
         </div>

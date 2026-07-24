@@ -1,27 +1,33 @@
+import { useState } from 'react';
 import { FaStar } from "react-icons/fa";
 
 const StarRatingInput = ({ rating, setRating }) => {
-    return (
-        <div className="flex gap-2">
+    const [hover, setHover] = useState(0);
 
-            {[1, 2, 3, 4, 5].map((star) => (
+    return (
+        <div className="flex gap-1">
+            {[1, 2, 3, 4, 5].map((starValue) => (
                 <button
-                    key={star}
+                    key={starValue}
                     type="button"
-                    onClick={() => setRating(star)}
-                    className="transition transform hover:scale-110"
+                    onClick={() => {
+                        console.log("Star clicked:", starValue);
+                        setRating(starValue);
+                        }}
+                    onMouseEnter={() => setHover(starValue)}
+                    onMouseLeave={() => setHover(0)}
+                    className="transition transform focus:outline-none"
                 >
                     <FaStar
-                        size={28}
-                        className={
-                            star <= rating
-                                ? "text-yellow-400"
-                                : "text-gray-300"
-                        }
-                    />
+    size={28}
+    className={`transition-colors duration-200 ${
+        starValue <= (hover || rating)
+            ? "text-yellow-400"
+            : "text-gray-300"
+                }`}
+                />
                 </button>
             ))}
-
         </div>
     );
 };

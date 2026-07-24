@@ -6,28 +6,11 @@ const cloudinary = require("../../config/cloudinary");
 // ===============================
 const createProduct = async (req, res) => {
     try {
-        const {
-            name,
-            description,
-            price,
-            category,
-            brand,
-            stock,
-            image,
-        } = req.body;
+        const { name, description, price, category, brand, stock, image } = req.body;
 
-        if (!name || !description || !price || !category) {
-            return res.status(400).json({
-                success: false,
-                message: "Please provide all required fields.",
-            });
-        }
-
+        // Custom validation: check for existing product name
         const existingProduct = await Product.findOne({
-            name: {
-                $regex: `^${name.trim()}$`,
-                $options: "i",
-            },
+            name: { $regex: `^${name.trim()}$`, $options: "i" },
         });
 
         if (existingProduct) {
@@ -101,19 +84,11 @@ const updateProduct = async (req, res) => {
             });
         }
 
-        if (
-            req.body.name &&
-            req.body.name.trim().toLowerCase() !==
-                product.name.toLowerCase()
-        ) {
+        // Custom validation: if name is being changed, check for conflicts
+        if (req.body.name && req.body.name.trim().toLowerCase() !== product.name.toLowerCase()) {
             const existingProduct = await Product.findOne({
-                name: {
-                    $regex: `^${req.body.name.trim()}$`,
-                    $options: "i",
-                },
-                _id: {
-                    $ne: product._id,
-                },
+                name: { $regex: `^${req.body.name.trim()}$`, $options: "i" },
+                _id: { $ne: product._id },
             });
 
             if (existingProduct) {
@@ -124,29 +99,21 @@ const updateProduct = async (req, res) => {
             }
         }
 
-        if (
-            req.body.image &&
-            req.body.image.public_id &&
-            product.image?.public_id &&
-            req.body.image.public_id !== product.image.public_id
-        ) {
-            await cloudinary.uploader.destroy(
-                product.image.public_id
-            );
+        // Handle image replacement on Cloudinary
+        if (req.body.image && req.body.image.public_id && product.image?.public_id && req.body.image.public_id !== product.image.public_id) {
+            await cloudinary.uploader.destroy(product.image.public_id);
+        }
+        
+        const updateData = { ...req.body };
+        if(updateData.name) {
+            updateData.name = updateData.name.trim();
         }
 
-        const updatedProduct =
-            await Product.findByIdAndUpdate(
-                req.params.id,
-                {
-                    ...req.body,
-                    name: req.body.name?.trim(),
-                },
-                {
-                    new: true,
-                    runValidators: true,
-                }
-            );
+        const updatedProduct = await Product.findByIdAndUpdate(
+            req.params.id,
+            updateData,
+            { new: true, runValidators: true }
+        );
 
         return res.status(200).json({
             success: true,
@@ -175,16 +142,15 @@ const deleteProduct = async (req, res) => {
             });
         }
 
+        // Delete image from Cloudinary if it exists
         if (product.image?.public_id) {
-            await cloudinary.uploader.destroy(
-                product.image.public_id
-            );
+            await cloudinary.uploader.destroy(product.image.public_id);
         }
 
         await product.deleteOne();
 
         return res.status(200).json({
-            success: false,
+            success: true, // Should be true on successful deletion
             message: "Product deleted successfully.",
         });
     } catch (error) {

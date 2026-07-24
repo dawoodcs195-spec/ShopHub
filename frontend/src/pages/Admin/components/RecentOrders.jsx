@@ -1,59 +1,30 @@
+import { motion } from 'framer-motion';
+
 const RecentOrders = ({ orders }) => {
     return (
-        <div className="bg-white rounded-xl shadow-md p-6">
-            <h2 className="text-2xl font-bold mb-6">
-                Recent Orders
-            </h2>
-
+        <div className="bg-surface rounded-lg shadow-soft p-6">
+            <h3 className="text-xl font-semibold text-text-primary mb-4">Recent Orders</h3>
             {orders.length === 0 ? (
-                <p className="text-gray-500">
-                    No orders yet.
-                </p>
+                <p className="text-text-secondary text-sm">No recent orders in this period.</p>
             ) : (
                 <div className="space-y-4">
-                    {orders.map((order) => (
-                        <div
+                    {orders.map((order, index) => (
+                        <motion.div
                             key={order._id}
-                            className="flex flex-col md:flex-row md:items-center md:justify-between border-b pb-4"
+                            className="flex items-center justify-between border-b border-border pb-3 last:border-b-0 last:pb-0"
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.1 }}
                         >
                             <div>
-                                <p className="font-semibold">
-                                    {order.user?.name}
-                                </p>
-
-                                <p className="text-sm text-gray-500">
-                                    {order.user?.email}
-                                </p>
-
-                                <p className="text-xs text-gray-400 mt-1">
-                                    {new Date(
-                                        order.createdAt
-                                    ).toLocaleDateString()}
-                                </p>
+                                <p className="font-semibold text-text-primary">{order.user?.name || 'Guest'}</p>
+                                <p className="text-sm text-text-secondary">#{order._id.slice(-6)}</p>
                             </div>
-
-                            <div className="text-right mt-3 md:mt-0">
-                                <p className="font-bold text-blue-600">
-                                    Rs. {order.totalPrice}
-                                </p>
-
-                                <span
-                                    className={`inline-block mt-2 px-3 py-1 rounded-full text-xs font-semibold ${
-                                        order.paymentStatus === "Paid"
-                                            ? "bg-green-100 text-green-700"
-                                            : order.paymentStatus === "Failed"
-                                            ? "bg-red-100 text-red-700"
-                                            : "bg-yellow-100 text-yellow-700"
-                                    }`}
-                                >
-                                    {order.paymentStatus}
-                                </span>
-
-                                <p className="text-sm text-gray-600 mt-2">
-                                    {order.orderStatus}
-                                </p>
+                            <div className="text-right">
+                                <p className="font-bold text-primary">Rs. {order.totalPrice.toLocaleString()}</p>
+                                <p className="text-xs text-text-secondary">{new Date(order.createdAt).toLocaleDateString()}</p>
                             </div>
-                        </div>
+                        </motion.div>
                     ))}
                 </div>
             )}

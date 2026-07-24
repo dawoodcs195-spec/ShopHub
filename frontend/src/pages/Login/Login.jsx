@@ -1,118 +1,105 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { motion } from "framer-motion";
+import toast from "react-hot-toast";
 
 import { loginUser } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
+import Input from "../../components/forms/Input"; // Use our new reusable Input component
 
 const Login = () => {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [formData, setFormData] = useState({
-        email: "",
-        password: "",
-    });
-
+    const [formData, setFormData] = useState({ email: "", password: "" });
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState("");
 
     const handleChange = (e) => {
-        setFormData({
-            ...formData,
-            [e.target.name]: e.target.value,
-        });
+        setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
     const handleSubmit = async (e) => {
         e.preventDefault();
-
-        setError("");
         setLoading(true);
-
         try {
-            const data = await loginUser(
-                formData.email,
-                formData.password
-            );
-
+            const data = await loginUser(formData.email, formData.password);
             login(data.user, data.token);
-
+            toast.success(`Welcome back, ${data.user.name}!`);
             navigate("/");
         } catch (err) {
-            setError(
-                err.response?.data?.message ||
-                    "Login failed."
-            );
+            toast.error(err.response?.data?.message || "Login failed. Please check your credentials.");
         } finally {
             setLoading(false);
         }
     };
 
     return (
-        <div className="max-w-md mx-auto mt-16 bg-white shadow-lg rounded-xl p-8">
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Login
-            </h1>
-
-            {error && (
-                <div className="bg-red-100 text-red-600 p-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
-
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-4"
-            >
-                <input
-                    type="email"
-                    name="email"
-                    placeholder="Email"
-                    value={formData.email}
-                    onChange={handleChange}
-                    className="w-full border p-3 rounded-lg"
-                    required
-                />
-
-                <input
-                    type="password"
-                    name="password"
-                    placeholder="Password"
-                    value={formData.password}
-                    onChange={handleChange}
-                    className="w-full border p-3 rounded-lg"
-                    required
-                />
-
-                <div className="text-right">
-                    <Link
-                        to="/forgot-password"
-                        className="text-sm text-blue-600 hover:underline"
-                    >
-                        Forgot Password?
-                    </Link>
-                </div>
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60"
+        <div className="min-h-screen flex items-center justify-center bg-background p-4">
+            <div className="max-w-4xl w-full grid lg:grid-cols-2 shadow-soft-lg rounded-xl overflow-hidden">
+                
+                {/* Decorative Panel */}
+                <motion.div 
+                    className="hidden lg:flex flex-col items-center justify-center bg-primary/20 p-12 text-center"
+                    initial={{ x: -100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
                 >
-                    {loading
-                        ? "Logging in..."
-                        : "Login"}
-                </button>
-            </form>
+                    <h2 className="font-serif text-4xl font-bold text-text-primary mb-4">Welcome Back</h2>
+                    <p className="text-text-secondary">
+                        Log in to continue your journey and explore more handcrafted creations.
+                    </p>
+                </motion.div>
 
-            <p className="text-center mt-5">
-                Don't have an account?{" "}
-                <Link
-                    to="/register"
-                    className="text-blue-600 font-semibold"
+                {/* Form Panel */}
+                <motion.div 
+                    className="bg-surface p-8 sm:p-12"
+                    initial={{ x: 100, opacity: 0 }}
+                    animate={{ x: 0, opacity: 1 }}
+                    transition={{ duration: 0.7, ease: "easeOut" }}
                 >
-                    Register
-                </Link>
-            </p>
+                    <h1 className="text-3xl font-serif font-bold text-text-primary text-center mb-8">
+                        Login to Your Account
+                    </h1>
+
+                    <form onSubmit={handleSubmit} className="space-y-6">
+                        <Input
+                            type="email"
+                            name="email"
+                            placeholder="Email Address"
+                            value={formData.email}
+                            onChange={handleChange}
+                            required
+                        />
+                        <Input
+                            type="password"
+                            name="password"
+                            placeholder="Password"
+                            value={formData.password}
+                            onChange={handleChange}
+                            required
+                        />
+                        <div className="text-right">
+                            <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                                Forgot Password?
+                            </Link>
+                        </div>
+                        <button
+                            type="submit"
+                            disabled={loading}
+                            className="w-full bg-primary text-white font-semibold py-3 rounded-lg shadow-soft hover:bg-primary-hover transition-all duration-300 disabled:opacity-60 disabled:cursor-not-allowed"
+                        >
+                            {loading ? "Logging in..." : "Login"}
+                        </button>
+                    </form>
+
+                    <p className="text-center text-text-secondary mt-8">
+                        Don't have an account?{" "}
+                        <Link to="/register" className="text-primary font-semibold hover:underline">
+                            Create one
+                        </Link>
+                    </p>
+                </motion.div>
+            </div>
         </div>
     );
 };

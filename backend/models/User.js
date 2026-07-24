@@ -8,7 +8,6 @@ const userSchema = new mongoose.Schema(
             trim: true,
             maxlength: [50, "Name cannot exceed 50 characters"],
         },
-
         email: {
             type: String,
             required: [true, "Please provide your email"],
@@ -20,51 +19,36 @@ const userSchema = new mongoose.Schema(
                 "Please provide a valid email",
             ],
         },
-
         password: {
             type: String,
             required: [true, "Please provide a password"],
             minlength: [6, "Password must be at least 6 characters"],
             select: false,
         },
-
         role: {
             type: String,
             enum: ["user", "admin"],
             default: "user",
         },
-
         avatar: {
-            url: {
-                type: String,
-                default: "",
-            },
-
-            public_id: {
-                type: String,
-                default: "",
-            },
+            url: { type: String, default: "" },
+            public_id: { type: String, default: "" },
         },
-
         wishlist: [
             {
                 type: mongoose.Schema.Types.ObjectId,
                 ref: "Product",
             },
         ],
-
-        resetPasswordToken: {
-            type: String,
-            default: "",
-        },
-
-        resetPasswordExpire: {
-            type: Date,
-        },
+        resetPasswordToken: { type: String, default: "" },
+        resetPasswordExpire: { type: Date },
     },
     {
         timestamps: true,
     }
 );
+
+// Add index for user role
+userSchema.index({ role: 1 });
 
 module.exports = mongoose.model("User", userSchema);

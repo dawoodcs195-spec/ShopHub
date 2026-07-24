@@ -10,24 +10,9 @@ const reviewSchema = new mongoose.Schema(
             ref: "User",
             required: true,
         },
-
-        name: {
-            type: String,
-            required: true,
-        },
-
-        rating: {
-            type: Number,
-            required: true,
-            min: 1,
-            max: 5,
-        },
-
-        comment: {
-            type: String,
-            required: true,
-            trim: true,
-        },
+        name: { type: String, required: true },
+        rating: { type: Number, required: true, min: 1, max: 5 },
+        comment: { type: String, required: true, trim: true },
     },
     {
         timestamps: true,
@@ -45,57 +30,27 @@ const productSchema = new mongoose.Schema(
             trim: true,
             unique: true,
         },
-
         description: {
             type: String,
             required: [true, "Product description is required"],
         },
-
         price: {
             type: Number,
             required: [true, "Product price is required"],
         },
-
         category: {
             type: String,
             required: [true, "Product category is required"],
         },
-
-        brand: {
-            type: String,
-            default: "No Brand",
-        },
-
-        stock: {
-            type: Number,
-            required: true,
-            default: 0,
-        },
-
+        brand: { type: String, default: "No Brand" },
+        stock: { type: Number, required: true, default: 0 },
         image: {
-            url: {
-                type: String,
-                default: "",
-            },
-
-            public_id: {
-                type: String,
-                default: "",
-            },
+            url: { type: String, default: "" },
+            public_id: { type: String, default: "" },
         },
-
         reviews: [reviewSchema],
-
-        rating: {
-            type: Number,
-            default: 0,
-        },
-
-        numReviews: {
-            type: Number,
-            default: 0,
-        },
-
+        rating: { type: Number, default: 0 },
+        numReviews: { type: Number, default: 0 },
         createdBy: {
             type: mongoose.Schema.Types.ObjectId,
             ref: "User",
@@ -105,5 +60,15 @@ const productSchema = new mongoose.Schema(
         timestamps: true,
     }
 );
+
+// Add indexes for performance
+productSchema.index({ category: 1 });
+productSchema.index({ brand: 1 });
+productSchema.index({ price: 1 });
+productSchema.index({ rating: -1 });
+productSchema.index({ createdAt: -1 });
+// Text index for searching
+productSchema.index({ name: 'text', description: 'text' });
+
 
 module.exports = mongoose.model("Product", productSchema);
