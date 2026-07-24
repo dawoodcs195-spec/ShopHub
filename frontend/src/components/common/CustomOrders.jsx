@@ -4,13 +4,13 @@ import { FaArrowRight, FaGift, FaHeart } from "react-icons/fa";
 
 import Button from "./Button";
 import SectionHeading from "./SectionHeading";
+import Reveal from "./Reveal";
 
 const CustomOrders = () => {
     return (
         <section className="relative overflow-hidden bg-gradient-to-b from-[#FFFDFB] to-[#FCF6F3] py-28">
             <div className="absolute inset-0 pointer-events-none">
                 <div className="absolute -left-20 top-10 h-72 w-72 rounded-full bg-rose-100/40 blur-3xl" />
-
                 <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-amber-100/40 blur-3xl" />
             </div>
 
@@ -22,22 +22,8 @@ const CustomOrders = () => {
                 />
 
                 <div className="mt-20 grid items-center gap-14 lg:grid-cols-2">
-                    <motion.div
-                        initial={{
-                            opacity: 0,
-                            x: -40,
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            x: 0,
-                        }}
-                        viewport={{
-                            once: true,
-                        }}
-                        transition={{
-                            duration: 0.8,
-                        }}
-                    >
+                    {/* Left: primary CTA */}
+                    <Reveal y={22} duration={0.85}>
                         <div className="rounded-[36px] border border-[#EFE6DC] bg-white p-10 shadow-xl">
                             <h3 className="font-serif text-3xl font-bold text-[#2D2A26]">
                                 Handmade.
@@ -49,107 +35,82 @@ const CustomOrders = () => {
 
                             <p className="mt-8 leading-8 text-[#6B655F]">
                                 Looking for something made just for you?
-                                Whether it's a personalized candle,
-                                resin keepsake, jewelry, decorative
-                                piece, pearl bag, or a thoughtful gift,
-                                we'd love to create something that's
-                                uniquely yours.
+                                Whether it's a personalized candle, resin keepsake,
+                                jewelry, decorative piece, pearl bag, or a thoughtful gift,
+                                we'd love to create something that's uniquely yours.
                             </p>
 
                             <div className="mt-10 space-y-5">
                                 <div className="flex items-start gap-4">
-                                    <FaHeart className="mt-1 text-[#B76E79]" />
+                                    <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-rose-50 text-[#B76E79]">
+                                        <FaHeart />
+                                    </span>
 
-                                    <p className="text-[#5F5751]">
-                                        Personalized names,
-                                        initials, colors, and
-                                        custom designs.
+                                    <p className="text-[#5F5751] leading-7">
+                                        Personalized names, initials, colors, and custom designs.
                                     </p>
                                 </div>
 
                                 <div className="flex items-start gap-4">
-                                    <FaGift className="mt-1 text-[#B76E79]" />
+                                    <span className="mt-1 inline-flex h-10 w-10 items-center justify-center rounded-2xl bg-amber-50 text-[#B76E79]">
+                                        <FaGift />
+                                    </span>
 
-                                    <p className="text-[#5F5751]">
-                                        Perfect for birthdays,
-                                        weddings, anniversaries,
-                                        baby showers, and special
-                                        celebrations.
+                                    <p className="text-[#5F5751] leading-7">
+                                        Perfect for birthdays, weddings, anniversaries, baby showers,
+                                        and special celebrations.
                                     </p>
                                 </div>
                             </div>
 
                             <div className="mt-10">
-                                <Link
-                                    to="/contact"
-                                >
-                                    <Button
-                                        size="lg"
-                                    >
+                                <Link to="/contact">
+                                    <Button size="lg">
                                         Request a Custom Creation
-
                                         <FaArrowRight />
                                     </Button>
                                 </Link>
                             </div>
                         </div>
-                    </motion.div>
+                    </Reveal>
 
-                    <motion.div
-                        initial={{
-                            opacity: 0,
-                            x: 40,
-                        }}
-                        whileInView={{
-                            opacity: 1,
-                            x: 0,
-                        }}
-                        viewport={{
-                            once: true,
-                        }}
-                        transition={{
-                            duration: 0.8,
-                        }}
-                        className="grid gap-6"
-                    >
-                        <div className="rounded-[30px] border border-[#EFE6DC] bg-white p-8 shadow-lg">
-                            <h4 className="font-serif text-2xl font-semibold text-[#2D2A26]">
-                                Personalized Resin Art
-                            </h4>
+                    {/* Right: supporting cards */}
+                    <Reveal y={22} duration={0.85} delay={0.05}>
+                        <div className="grid gap-6">
+                            {[
+                                {
+                                    title: "Personalized Resin Art",
+                                    description:
+                                        "Beautiful handcrafted resin creations customized with names, flowers, colors, and meaningful details.",
+                                },
+                                {
+                                    title: "Handmade Gift Sets",
+                                    description:
+                                        "Create a memorable gift by combining handcrafted candles, décor, jewelry, and personalized keepsakes into one beautiful collection.",
+                                },
+                                {
+                                    title: "Crafted With Care",
+                                    description:
+                                        "Every custom order is made by hand with patience, attention to detail, and the goal of creating something truly meaningful.",
+                                },
+                            ].map((card) => (
+                                <motion.div
+                                    key={card.title}
+                                    whileHover={{ y: -5 }}
+                                    transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                                    className="rounded-[30px] border border-[#EFE6DC] bg-white p-8 shadow-lg"
+                                >
+                                    <h4 className="font-serif text-2xl font-semibold text-[#2D2A26]">
+                                        {card.title}
+                                    </h4>
 
-                            <p className="mt-4 leading-7 text-[#6B655F]">
-                                Beautiful handcrafted resin creations
-                                customized with names, flowers,
-                                colors, and meaningful details.
-                            </p>
+                                    <p className="mt-4 leading-7 text-[#6B655F]">
+                                        {card.description}
+                                    </p>
+                                </motion.div>
+                            ))}
                         </div>
-
-                        <div className="rounded-[30px] border border-[#EFE6DC] bg-white p-8 shadow-lg">
-                            <h4 className="font-serif text-2xl font-semibold text-[#2D2A26]">
-                                Handmade Gift Sets
-                            </h4>
-
-                            <p className="mt-4 leading-7 text-[#6B655F]">
-                                Create a memorable gift by combining
-                                handcrafted candles, décor, jewelry,
-                                and personalized keepsakes into one
-                                beautiful collection.
-                            </p>
-                        </div>
-
-                        <div className="rounded-[30px] border border-[#EFE6DC] bg-white p-8 shadow-lg">
-                            <h4 className="font-serif text-2xl font-semibold text-[#2D2A26]">
-                                Crafted With Care
-                            </h4>
-
-                            <p className="mt-4 leading-7 text-[#6B655F]">
-                                Every custom order is made by hand with
-                                patience, attention to detail, and the
-                                goal of creating something truly
-                                meaningful.
-                            </p>
-                        </div>
-                    </motion.div>
+                    </Reveal>
                 </div>
             </div>
         </section>

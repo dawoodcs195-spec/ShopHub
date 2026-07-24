@@ -1,4 +1,7 @@
+// frontend/src/components/products/ProductInfo.jsx
+
 import { useEffect, useMemo, useState, useCallback } from "react";
+import { Link } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
 import {
@@ -12,12 +15,26 @@ import {
     FaChevronRight,
     FaShieldAlt,
     FaTruck,
+    FaShareAlt,
+    FaLink,
 } from "react-icons/fa";
 
 import Rating from "../common/Rating";
 import { useAuth } from "../../context/AuthContext";
 import { useWishlist } from "../../context/WishlistContext";
 import { useCart } from "../../context/CartContext";
+
+const RECENTLY_VIEWED_KEY = "shophub_recently_viewed";
+
+const readRecentlyViewed = () => {
+    try {
+        const raw = localStorage.getItem(RECENTLY_VIEWED_KEY);
+        const parsed = raw ? JSON.parse(raw) : [];
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+};
 
 const ProductInfo = ({ product }) => {
     const { user } = useAuth();
@@ -30,10 +47,21 @@ const ProductInfo = ({ product }) => {
     const [lightboxOpen, setLightboxOpen] = useState(false);
     const [activeIndex, setActiveIndex] = useState(0);
 
+    // Mini recently viewed strip
+    const [recentlyViewed, setRecentlyViewed] = useState([]);
+
     const wishlisted = isInWishlist(product._id);
 
+    const productUrl = useMemo(() => {
+        try {
+            const origin = window.location.origin;
+            return `${origin}/product/${product._id}`;
+        } catch {
+            return `/product/${product._id}`;
+        }
+    }, [product._id]);
+
     const images = useMemo(() => {
-        // Supports: product.images (array) in future, or current product.image
         const list = [];
 
         if (Array.isArray(product?.images) && product.images.length > 0) {
@@ -46,7 +74,6 @@ const ProductInfo = ({ product }) => {
         const mainUrl = product?.image?.url;
         if (mainUrl) list.unshift(mainUrl);
 
-        // De-dup (in case main image is also in images)
         const unique = [...new Set(list)];
 
         return unique.length > 0
@@ -58,6 +85,17 @@ const ProductInfo = ({ product }) => {
         setActiveIndex(0);
         setQuantity(1);
     }, [product?._id]);
+
+    // Load mini strip from localStorage (ProductDetails is already writing to it)
+    useEffect(() => {
+        setRecentlyViewed(readRecentlyViewed());
+    }, [product?._id]);
+
+    const recentlyViewedForStrip = useMemo(() => {
+        return (recentlyViewed || [])
+            .filter((p) => p?._id && p._id !== product._id)
+            .slice(0, 4);
+    }, [recentlyViewed, product._id]);
 
     const mainImage = images[activeIndex];
 
@@ -76,8 +114,6 @@ const ProductInfo = ({ product }) => {
             return;
         }
 
-        // Your CartContext currently adds 1 at a time.
-        // Loop to respect chosen quantity without changing global cart logic.
         for (let i = 0; i < quantity; i++) {
             addToCart(product);
         }
@@ -92,6 +128,36 @@ const ProductInfo = ({ product }) => {
         }
         await toggleWishlist(product._id);
     };
+
+    const copyLink = useCallback(async () => {
+        try {
+            await navigator.clipboard.writeText(productUrl);
+            toast.success("Link copied.");
+        } catch (err) {
+            console.error(err);
+            toast.error("Couldn't copy the link. Please try again.");
+        }
+    }, [productUrl]);
+
+    const handleShare = useCallback(async () => {
+        try {
+            if (navigator.share) {
+                await navigator.share({
+                    title: product.name,
+                    text: "Take a look at this handcrafted creation.",
+                    url: productUrl,
+                });
+                return;
+            }
+
+            await copyLink();
+        } catch (err) {
+            if (err?.name !== "AbortError") {
+                console.error(err);
+                toast.error("Couldn't share right now.");
+            }
+        }
+    }, [product.name, productUrl, copyLink]);
 
     const openLightbox = (index = activeIndex) => {
         setActiveIndex(index);
@@ -134,7 +200,11 @@ const ProductInfo = ({ product }) => {
 
     const itemVariants = {
         hidden: { opacity: 0, y: 18 },
-        visible: { opacity: 1, y: 0, transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] } },
+        visible: {
+            opacity: 1,
+            y: 0,
+            transition: { duration: 0.55, ease: [0.22, 1, 0.36, 1] },
+        },
     };
 
     const priceText = useMemo(() => {
@@ -143,7 +213,6 @@ const ProductInfo = ({ product }) => {
     }, [product?.price]);
 
     const estimatedDelivery = useMemo(() => {
-        // UI-only, boutique friendly phrasing
         return "Estimated delivery: 3–6 business days";
     }, []);
 
@@ -176,7 +245,6 @@ const ProductInfo = ({ product }) => {
                         </button>
                     </div>
 
-                    {/* Thumbnails (only if multiple) */}
                     {images.length > 1 && (
                         <div className="grid grid-cols-5 gap-3">
                             {images.slice(0, 5).map((url, idx) => {
@@ -223,17 +291,48 @@ const ProductInfo = ({ product }) => {
                             </h1>
                         </div>
 
-                        <button
-                            onClick={handleWishlist}
-                            className="bg-surface rounded-full p-3 shadow-soft border border-border hover:scale-105 transition"
-                            aria-label="Toggle Wishlist"
-                        >
-                            {wishlisted ? (
-                                <FaHeart size={22} className="text-rose-500" />
-                            ) : (
-                                <FaRegHeart size={22} className="text-text-secondary" />
-                            )}
-                        </button>
+                        {/* Action cluster: Share / Copy / Wishlist */}
+                        <div className="flex items-center gap-2">
+                            <motion.button
+                                type="button"
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleShare}
+                                className="bg-surface rounded-full p-3 shadow-soft border border-border hover:bg-secondary transition"
+                                aria-label="Share product"
+                                title="Share"
+                            >
+                                <FaShareAlt size={18} className="text-text-secondary" />
+                            </motion.button>
+
+                            <motion.button
+                                type="button"
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={copyLink}
+                                className="bg-surface rounded-full p-3 shadow-soft border border-border hover:bg-secondary transition"
+                                aria-label="Copy product link"
+                                title="Copy link"
+                            >
+                                <FaLink size={18} className="text-text-secondary" />
+                            </motion.button>
+
+                            <motion.button
+                                type="button"
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                onClick={handleWishlist}
+                                className="bg-surface rounded-full p-3 shadow-soft border border-border hover:bg-secondary transition"
+                                aria-label="Toggle wishlist"
+                                title={wishlisted ? "Wishlisted" : "Add to wishlist"}
+                            >
+                                {wishlisted ? (
+                                    <FaHeart size={20} className="text-rose-500" />
+                                ) : (
+                                    <FaRegHeart size={20} className="text-text-secondary" />
+                                )}
+                            </motion.button>
+                        </div>
                     </div>
 
                     {/* Rating */}
@@ -254,9 +353,7 @@ const ProductInfo = ({ product }) => {
                         <div className="rounded-[28px] border border-border bg-surface shadow-soft p-6 sm:p-8">
                             <div className="flex items-end justify-between gap-6">
                                 <div>
-                                    <p className="text-sm text-text-secondary">
-                                        Price
-                                    </p>
+                                    <p className="text-sm text-text-secondary">Price</p>
                                     <p className="mt-2 text-4xl font-sans font-bold text-primary">
                                         Rs. {priceText}
                                     </p>
@@ -273,7 +370,6 @@ const ProductInfo = ({ product }) => {
                                     </p>
                                 </div>
 
-                                {/* Trust mini badge */}
                                 <div className="hidden sm:flex flex-col items-end gap-2">
                                     <div className="rounded-full bg-accent px-4 py-2 text-xs font-semibold text-accent-foreground">
                                         Handmade • Premium
@@ -284,7 +380,6 @@ const ProductInfo = ({ product }) => {
                                 </div>
                             </div>
 
-                            {/* Quantity + Add to cart */}
                             {product.stock > 0 && (
                                 <div className="mt-8 flex flex-col sm:flex-row items-stretch gap-4">
                                     <div className="flex items-center justify-between border border-border rounded-xl p-2 bg-white">
@@ -321,7 +416,6 @@ const ProductInfo = ({ product }) => {
                                 </div>
                             )}
 
-                            {/* Trust badges */}
                             <div className="mt-8 grid gap-3 sm:grid-cols-3 text-sm text-text-secondary">
                                 <div className="flex items-center gap-3 rounded-2xl border border-border bg-white p-3">
                                     <FaShieldAlt className="text-primary" />
@@ -339,10 +433,65 @@ const ProductInfo = ({ product }) => {
                                 </div>
                             </div>
 
-                            {/* Mobile delivery line */}
                             <div className="mt-6 sm:hidden text-xs text-text-secondary">
                                 {estimatedDelivery}
                             </div>
+
+                            {/* =========================
+                                Recently Viewed (mini strip)
+                            ========================= */}
+                            {recentlyViewedForStrip.length > 0 && (
+                                <div className="mt-10">
+                                    <div className="flex items-center justify-between gap-4">
+                                        <p className="text-sm font-semibold tracking-wide text-[#B76E79]">
+                                            Recently viewed
+                                        </p>
+
+                                        <span className="text-xs text-text-secondary">
+                                            A few pieces you explored
+                                        </span>
+                                    </div>
+
+                                    <div className="mt-4 grid grid-cols-2 gap-3">
+                                        {recentlyViewedForStrip.map((p) => (
+                                            <motion.div
+                                                key={p._id}
+                                                whileHover={{ y: -2 }}
+                                                transition={{
+                                                    duration: 0.25,
+                                                    ease: [0.22, 1, 0.36, 1],
+                                                }}
+                                            >
+                                                <Link
+                                                    to={`/product/${p._id}`}
+                                                    className="group flex items-center gap-3 rounded-2xl border border-border bg-white p-3 transition-colors hover:bg-secondary/40"
+                                                >
+                                                    <div className="h-14 w-14 overflow-hidden rounded-xl border border-border bg-[#F3ECE6]">
+                                                        <img
+                                                            src={
+                                                                p.image?.url ||
+                                                                "https://placehold.co/200x200/F5E1E6/422B3A?text=Handmade"
+                                                            }
+                                                            alt={p.name}
+                                                            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                                        />
+                                                    </div>
+
+                                                    <div className="min-w-0 flex-1">
+                                                        <p className="truncate font-semibold text-sm text-text-primary">
+                                                            {p.name}
+                                                        </p>
+                                                        <p className="mt-1 text-xs text-text-secondary">
+                                                            Rs.{" "}
+                                                            {Number(p.price).toLocaleString()}
+                                                        </p>
+                                                    </div>
+                                                </Link>
+                                            </motion.div>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
                         </div>
                     </div>
                 </motion.div>
@@ -359,7 +508,6 @@ const ProductInfo = ({ product }) => {
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
                         onMouseDown={(e) => {
-                            // close only if clicking backdrop
                             if (e.target === e.currentTarget) closeLightbox();
                         }}
                         role="dialog"
@@ -369,7 +517,10 @@ const ProductInfo = ({ product }) => {
                             initial={{ opacity: 0, y: 18, scale: 0.98 }}
                             animate={{ opacity: 1, y: 0, scale: 1 }}
                             exit={{ opacity: 0, y: 18, scale: 0.98 }}
-                            transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
+                            transition={{
+                                duration: 0.35,
+                                ease: [0.22, 1, 0.36, 1],
+                            }}
                             className="relative w-full max-w-5xl"
                         >
                             <button

@@ -53,8 +53,7 @@ const Profile = () => {
         } catch (error) {
             console.error(error);
             toast.error(
-                error.response?.data?.message ||
-                    "Failed to load profile."
+                error.response?.data?.message || "Failed to load profile."
             );
         } finally {
             setLoading(false);
@@ -107,7 +106,7 @@ const Profile = () => {
             );
         } finally {
             setUploadingAvatar(false);
-            e.target.value = ""; // reset input
+            e.target.value = "";
         }
     };
 
@@ -118,9 +117,7 @@ const Profile = () => {
             setSavingProfile(true);
 
             const response = await updateUserProfile(
-                {
-                    name: profile.name,
-                },
+                { name: profile.name },
                 token
             );
 
@@ -136,8 +133,7 @@ const Profile = () => {
         } catch (error) {
             console.error(error);
             toast.error(
-                error.response?.data?.message ||
-                    "Failed to update profile."
+                error.response?.data?.message || "Failed to update profile."
             );
         } finally {
             setSavingProfile(false);
@@ -183,25 +179,25 @@ const Profile = () => {
 
     if (loading) {
         return (
-            <div className="text-center py-20 text-2xl">
+            <div className="text-center py-20 text-2xl font-serif text-text-secondary dark:text-dark-muted-foreground">
                 Loading Profile...
             </div>
         );
     }
 
     return (
-        <div className="max-w-4xl mx-auto py-10 px-5">
-            <h1 className="text-4xl font-bold mb-8">My Profile</h1>
+        <div className="max-w-4xl mx-auto py-12 px-5">
+            <h1 className="text-4xl font-serif font-bold mb-10 text-text-primary dark:text-dark-card-foreground">
+                My Profile
+            </h1>
 
             <div className="grid gap-8">
-                {/* Avatar Section */}
                 <AvatarUpload
                     avatar={profile.avatar}
                     uploading={uploadingAvatar}
                     onImageChange={handleAvatarChange}
                 />
 
-                {/* Profile Information */}
                 <ProfileInfo
                     profile={profile}
                     onChange={handleProfileChange}
@@ -209,7 +205,6 @@ const Profile = () => {
                     saving={savingProfile}
                 />
 
-                {/* Change Password */}
                 <ChangePassword
                     passwordData={passwordData}
                     onChange={handlePasswordChange}

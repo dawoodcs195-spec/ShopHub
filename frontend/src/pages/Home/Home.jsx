@@ -10,8 +10,9 @@ import Features from "../../components/common/Features";
 import MeetArtist from "../../components/common/MeetArtist";
 import CustomOrders from "../../components/common/CustomOrders";
 import InstagramGallery from "../../components/common/InstagramGallery";
+import Testimonials from "../../components/common/Testimonials";
+import Newsletter from "../../components/common/Newsletter";
 import SectionHeading from "../../components/common/SectionHeading";
-import Reveal from "../../components/common/Reveal";
 
 import ProductCard from "../../components/products/ProductCard";
 import SkeletonProductCard from "../../components/products/SkeletonProductCard";
@@ -75,14 +76,10 @@ const Home = () => {
     }, [keyword, category, minPrice, maxPrice, rating, sort, page]);
 
     const gridContainerVariants = {
-        hidden: {
-            opacity: 0,
-        },
+        hidden: { opacity: 0 },
         visible: {
             opacity: 1,
-            transition: {
-                staggerChildren: 0.12,
-            },
+            transition: { staggerChildren: 0.12 },
         },
     };
 
@@ -164,10 +161,7 @@ const Home = () => {
                                 animate="visible"
                             >
                                 {products.map((product) => (
-                                    <ProductCard
-                                        key={product._id}
-                                        product={product}
-                                    />
+                                    <ProductCard key={product._id} product={product} />
                                 ))}
                             </motion.div>
 
@@ -191,29 +185,13 @@ const Home = () => {
                 </div>
             </section>
 
-            {homePage && (
-                <Reveal>
-                    <MeetArtist />
-                </Reveal>
-            )}
-
-            {homePage && (
-                <Reveal>
-                    <CustomOrders />
-                </Reveal>
-            )}
-
-            {homePage && (
-                <Reveal>
-                    <Features />
-                </Reveal>
-            )}
-
-            {homePage && (
-                <Reveal>
-                    <InstagramGallery />
-                </Reveal>
-            )}
+            {/* These sections contain their own premium Reveal + motion internally */}
+            {homePage && <MeetArtist />}
+            {homePage && <CustomOrders />}
+            {homePage && <Features />}
+            {homePage && <InstagramGallery />}
+            {homePage && <Testimonials />}
+            {homePage && <Newsletter />}
         </div>
     );
 };
