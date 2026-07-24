@@ -44,10 +44,21 @@ const productSchema = new mongoose.Schema(
         },
         brand: { type: String, default: "No Brand" },
         stock: { type: Number, required: true, default: 0 },
+
+        // Cover image (for listing cards)
         image: {
             url: { type: String, default: "" },
             public_id: { type: String, default: "" },
         },
+
+        // Gallery images (for product details)
+        images: [
+            {
+                url: { type: String, default: "" },
+                public_id: { type: String, default: "" },
+            },
+        ],
+
         reviews: [reviewSchema],
         rating: { type: Number, default: 0 },
         numReviews: { type: Number, default: 0 },
@@ -68,7 +79,6 @@ productSchema.index({ price: 1 });
 productSchema.index({ rating: -1 });
 productSchema.index({ createdAt: -1 });
 // Text index for searching
-productSchema.index({ name: 'text', description: 'text' });
-
+productSchema.index({ name: "text", description: "text" });
 
 module.exports = mongoose.model("Product", productSchema);

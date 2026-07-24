@@ -2,11 +2,58 @@ const Product = require("../../models/Product");
 const cloudinary = require("../../config/cloudinary");
 
 // ===============================
+// Helpers
+// ===============================
+const asImageArray = (images) => {
+    if (!images) return [];
+    if (!Array.isArray(images)) return [];
+    return images
+        .map((img) => {
+            if (!img) return null;
+            if (typeof img === "string") return { url: img, public_id: "" };
+            return {
+                url: img.url || "",
+                public_id: img.public_id || "",
+            };
+        })
+        .filter((img) => img && img.url);
+};
+
+const uniquePublicIds = (arr) => {
+    const set = new Set();
+    for (const id of arr) {
+        if (id) set.add(id);
+    }
+    return [...set];
+};
+
+const destroyCloudinaryIds = async (publicIds) => {
+    const ids = uniquePublicIds(publicIds);
+    for (const id of ids) {
+        try {
+            await cloudinary.uploader.destroy(id);
+        } catch (e) {
+            // Do not fail the request for cleanup issues
+            console.error("Cloudinary destroy failed for:", id, e.message);
+        }
+    }
+};
+
+// ===============================
 // Create Product
 // ===============================
 const createProduct = async (req, res) => {
     try {
-        const { name, description, price, category, brand, stock, image } = req.body;
+        const {
+            name,
+            description,
+            price,
+            category,
+            brand,
+            stock,
+            image,
+            images,
+        } = req.body;
 
         // Custom validation: check for existing product name
         const existingProduct = await Product.findOne({
@@ -20,6 +67,29 @@ const createProduct = async (req, res) => {
             });
         }
 
+        const parsedImages = asImageArray(images);
+        const coverFromBody = image && image.url ? image : null;
+
+        // Backward compatible:
+        // - if images[] provided -> use it
+        // - else use image as single -> convert to images[]
+        const finalImages =
+            parsedImages.length > 0
+                ? parsedImages
+                : coverFromBody
+                ? [coverFromBody]
+                : [];
+
+        if (finalImages.length === 0) {
+            return res.status(400).json({
+                success: false,
+                message: "At least one product image is required.",
+            });
+        }
+
+        // Cover image = first gallery image
+        const finalCover = finalImages[0];
+
         const product = await Product.create({
             name: name.trim(),
             description,
@@ -27,7 +97,8 @@ const createProduct = async (req, res) => {
             category,
             brand,
             stock,
-            image,
+            image: finalCover,
+            images: finalImages,
             createdBy: req.user._id,
         });
 
@@ -85,9 +156,16 @@ const updateProduct = async (req, res) => {
         }
 
         // Custom validation: if name is being changed, check for conflicts
-        if (req.body.name && req.body.name.trim().toLowerCase() !== product.name.toLowerCase()) {
+        if (
+            req.body.name &&
+            req.body.name.trim().toLowerCase() !==
+                product.name.toLowerCase()
+        ) {
             const existingProduct = await Product.findOne({
-                name: { $regex: `^${req.body.name.trim()}$`, $options: "i" },
+                name: {
+                    $regex: `^${req.body.name.trim()}$`,
+                    $options: "i",
+                },
                 _id: { $ne: product._id },
             });
 
@@ -99,14 +177,50 @@ const updateProduct = async (req, res) => {
             }
         }
 
-        // Handle image replacement on Cloudinary
-        if (req.body.image && req.body.image.public_id && product.image?.public_id && req.body.image.public_id !== product.image.public_id) {
-            await cloudinary.uploader.destroy(product.image.public_id);
-        }
-        
         const updateData = { ...req.body };
-        if(updateData.name) {
-            updateData.name = updateData.name.trim();
+        if (updateData.name) updateData.name = updateData.name.trim();
+
+        // If images[] is provided, treat it as canonical gallery
+        const incomingImages = asImageArray(updateData.images);
+
+        if (updateData.images !== undefined) {
+            if (incomingImages.length === 0) {
+                return res.status(400).json({
+                    success: false,
+                    message: "At least one product image is required.",
+                });
+            }
+
+            updateData.images = incomingImages;
+            updateData.image = incomingImages[0]; // cover = first
+        } else {
+            // Backward compatibility: handle single image update if used anywhere
+            if (
+                updateData.image &&
+                updateData.image.public_id &&
+                product.image?.public_id &&
+                updateData.image.public_id !== product.image.public_id
+            ) {
+                await destroyCloudinaryIds([product.image.public_id]);
+            }
+        }
+
+        // Cloudinary cleanup when gallery changes
+        if (updateData.images) {
+            const oldIds = [
+                ...(product.images || []).map((img) => img.public_id),
+                product.image?.public_id,
+            ].filter(Boolean);
+
+            const newIds = [
+                ...(updateData.images || []).map((img) => img.public_id),
+                updateData.image?.public_id,
+            ].filter(Boolean);
+
+            const newSet = new Set(newIds);
+            const removed = oldIds.filter((id) => !newSet.has(id));
+
+            await destroyCloudinaryIds(removed);
         }
 
         const updatedProduct = await Product.findByIdAndUpdate(
@@ -142,15 +256,17 @@ const deleteProduct = async (req, res) => {
             });
         }
 
-        // Delete image from Cloudinary if it exists
-        if (product.image?.public_id) {
-            await cloudinary.uploader.destroy(product.image.public_id);
-        }
+        const idsToDelete = [
+            ...(product.images || []).map((img) => img.public_id),
+            product.image?.public_id,
+        ].filter(Boolean);
+
+        await destroyCloudinaryIds(idsToDelete);
 
         await product.deleteOne();
 
         return res.status(200).json({
-            success: true, // Should be true on successful deletion
+            success: true,
             message: "Product deleted successfully.",
         });
     } catch (error) {
