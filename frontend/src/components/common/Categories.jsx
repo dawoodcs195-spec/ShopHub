@@ -9,6 +9,8 @@ import {
     FaStar,
 } from "react-icons/fa";
 
+import Reveal from "./Reveal";
+
 const categories = [
     {
         name: "Signature Candles",
@@ -85,21 +87,9 @@ const Categories = () => {
     return (
         <section className="bg-[#FCFAF7] py-24">
             <div className="max-w-7xl mx-auto px-6 lg:px-8">
-                <motion.div
-                    initial={{
-                        opacity: 0,
-                        y: 25,
-                    }}
-                    whileInView={{
-                        opacity: 1,
-                        y: 0,
-                    }}
-                    viewport={{
-                        once: true,
-                    }}
-                    transition={{
-                        duration: 0.7,
-                    }}
+                <Reveal
+                    y={24}
+                    duration={0.85}
                     className="max-w-2xl mx-auto text-center mb-16"
                 >
                     <span className="inline-block rounded-full bg-rose-100 px-5 py-2 text-sm font-semibold tracking-wide text-rose-700">
@@ -116,15 +106,10 @@ const Categories = () => {
                         Explore thoughtfully handcrafted creations designed
                         with care, creativity, and timeless elegance.
                     </p>
-                </motion.div>
+                </Reveal>
 
-                <motion.div
+                <Reveal
                     variants={containerVariants}
-                    initial="hidden"
-                    whileInView="visible"
-                    viewport={{
-                        once: true,
-                    }}
                     className="grid gap-8 md:grid-cols-2 xl:grid-cols-3"
                 >
                     {categories.map((category) => {
@@ -168,7 +153,7 @@ const Categories = () => {
                             </motion.div>
                         );
                     })}
-                </motion.div>
+                </Reveal>
             </div>
         </section>
     );

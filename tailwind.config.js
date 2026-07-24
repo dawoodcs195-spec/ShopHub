@@ -2,56 +2,118 @@
 
 /** @type {import('tailwindcss').Config} */
 export default {
-  darkMode: 'class', // Enable class-based dark mode
+  darkMode: "class",
   theme: {
     extend: {
       colors: {
-        // Light Theme
-        'background': '#F9FAFB', // Almost white, very light gray
-        'foreground': '#FFFFFF', // Card backgrounds, etc.
-        'card': '#FFFFFF',
-        'card-foreground': '#030712', // Text on cards
-        'popover': '#FFFFFF',
-        'popover-foreground': '#030712',
-        'primary': '#6366F1', // Indigo-500
-        'primary-foreground': '#FFFFFF', // Text on primary buttons
-        'secondary': '#F3F4F6', // Gray-100, for secondary buttons, backgrounds
-        'secondary-foreground': '#1F2937', // Text on secondary
-        'muted': '#F3F4F6', // Gray-100, for subtle backgrounds
-        'muted-foreground': '#6B7280', // Gray-500, for placeholder text, etc.
-        'accent': '#ECFDF5', // Green-50, for highlights
-        'accent-foreground': '#065F46', // Green-800
-        'destructive': '#EF4444', // Red-500
-        'destructive-foreground': '#FFFFFF',
-        'border': '#E5E7EB', // Gray-200
-        'input': '#E5E7EB',
-        'ring': '#6366F1', // Focus rings
+        // =========================================================
+        // Semantic Tokens (keep your existing keys to avoid breakage)
+        // =========================================================
 
-        // Dark Theme
-        'dark-background': '#030712', // Very dark blue/black
-        'dark-foreground': '#111827', // Dark gray for card backgrounds
-        'dark-card': '#09090B', // Slightly lighter than background
-        'dark-card-foreground': '#F9FAFB', // Text on cards
-        'dark-popover': '#09090B',
-        'dark-popover-foreground': '#F9FAFB',
-        'dark-primary': '#818CF8', // Lighter indigo for contrast
-        'dark-primary-foreground': '#030712',
-        'dark-secondary': '#1F2937', // Gray-800
-        'dark-secondary-foreground': '#F9FAFB',
-        'dark-muted': '#1F2937',
-        'dark-muted-foreground': '#9CA3AF', // Gray-400
-        'dark-accent': '#1F2937', // Darker accent background
-        'dark-accent-foreground': '#A7F3D0', // Lighter green
-        'dark-destructive': '#F87171', // Lighter red
-        'dark-destructive-foreground': '#030712',
-        'dark-border': '#1F2937', // Gray-800
-        'dark-input': '#1F2937',
-        'dark-ring': '#818CF8',
+        // Light Theme (warm luxury)
+        background: "#FBF7F3", // Warm ivory (page background)
+        foreground: "#FFFFFF", // Surface (cards, nav surface, etc.)
+        card: "#FFFFFF",
+        "card-foreground": "#2B2A28", // Charcoal ink on cards
+        popover: "#FFFFFF",
+        "popover-foreground": "#2B2A28",
+
+        // Primary = Rose Gold touch (soft, premium)
+        primary: "#D8B2A1", // Light rose gold
+        "primary-foreground": "#2B2A28", // Ink on rose gold (premium + accessible)
+
+        // Secondary = Cream / soft warmth
+        secondary: "#F6EFEA", // Creamy warm neutral
+        "secondary-foreground": "#2B2A28",
+
+        muted: "#F3ECE6", // Soft warm muted background
+        "muted-foreground": "#7A6E67", // Warm gray text
+
+        // Accent = light rose pink wash (badges, subtle highlights)
+        accent: "#F4DDE3", // Light rose pink
+        "accent-foreground": "#4B2C33", // Deep plum-brown
+
+        destructive: "#E25555",
+        "destructive-foreground": "#FFFFFF",
+
+        border: "#E9DED8", // Warm border (no cold gray)
+        input: "#E9DED8",
+        ring: "#D8B2A1", // Rose-gold focus ring
+
+        // Extra ink tokens (safe to start using without breaking old usage)
+        ink: "#2B2A28", // Primary text
+        "ink-muted": "#7A6E67",
+
+        // =========================================================
+        // Dark Theme (warm dark, not blue/tech)
+        // =========================================================
+        "dark-background": "#171312", // Warm charcoal
+        "dark-foreground": "#1E1817", // Surface behind cards/sections
+        "dark-card": "#1D1716",
+        "dark-card-foreground": "#F7F2EE",
+        "dark-popover": "#1D1716",
+        "dark-popover-foreground": "#F7F2EE",
+
+        "dark-primary": "#D8B2A1",
+        "dark-primary-foreground": "#171312",
+
+        "dark-secondary": "#2A2322",
+        "dark-secondary-foreground": "#F7F2EE",
+
+        "dark-muted": "#241D1C",
+        "dark-muted-foreground": "#C9BCB6",
+
+        "dark-accent": "#3A2A2D",
+        "dark-accent-foreground": "#F4DDE3",
+
+        "dark-destructive": "#F07171",
+        "dark-destructive-foreground": "#171312",
+
+        "dark-border": "#3A2F2D",
+        "dark-input": "#3A2F2D",
+        "dark-ring": "#D8B2A1",
+
+        "dark-ink": "#F7F2EE",
+        "dark-ink-muted": "#C9BCB6",
+
+        // =========================================================
+        // Brand Palette (optional utilities for future components)
+        // =========================================================
+        brand: {
+          ivory: "#FBF7F3",
+          cream: "#F6EFEA",
+          rosePink: "#F4DDE3",
+          roseGold: "#D8B2A1",
+          warmGold: "#C7A35B",
+          plum: "#3D2A3A",
+          sage: "#A8B9A3",
+          lavender: "#C8B6D8",
+          charcoal: "#2B2A28",
+          warmGray: "#7A6E67",
+        },
       },
+
       fontFamily: {
-        sans: ['Inter', 'sans-serif'],
+        sans: ["Inter", "sans-serif"],
+      },
+
+      // Boutique depth: softer, warmer shadows (less “gray UI card”)
+      boxShadow: {
+        soft: "0 10px 30px -20px rgba(43, 42, 40, 0.25)",
+        lift: "0 22px 60px -30px rgba(43, 42, 40, 0.35)",
+        glow: "0 0 0 6px rgba(216, 178, 161, 0.22)", // rose-gold glow
+      },
+
+      // Premium motion defaults (we'll reuse in components)
+      transitionTimingFunction: {
+        premium: "cubic-bezier(0.22, 1, 0.36, 1)",
+      },
+      transitionDuration: {
+        250: "250ms",
+        400: "400ms",
+        600: "600ms",
       },
     },
   },
   plugins: [],
-}
+};

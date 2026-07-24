@@ -5,244 +5,224 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { uploadImage } from "../../services/uploadService";
 
-const ProductFormModal = ({
-    isOpen,
-    onClose,
-    onSubmit,
-    initialData,
-    loading,
-}) => {
-    const { token } = useAuth();
+const DEFAULT_BRAND = "SHOPHUB";
 
-    const [uploadingImage, setUploadingImage] = useState(false);
+const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData, loading }) => {
+  const { token } = useAuth();
 
-    const [formData, setFormData] = useState({
+  const [uploadingImage, setUploadingImage] = useState(false);
+
+  const [formData, setFormData] = useState({
+    name: "",
+    description: "",
+    price: "",
+    category: "",
+    brand: DEFAULT_BRAND, // keep for backend compatibility, hidden from UI
+    stock: "",
+    image: {
+      url: "",
+      public_id: "",
+    },
+  });
+
+  useEffect(() => {
+    if (initialData) {
+      setFormData({
+        name: initialData.name || "",
+        description: initialData.description || "",
+        price: initialData.price || "",
+        category: initialData.category || "",
+        brand: initialData.brand || DEFAULT_BRAND,
+        stock: initialData.stock || "",
+        image: initialData.image || {
+          url: "",
+          public_id: "",
+        },
+      });
+    } else {
+      setFormData({
         name: "",
         description: "",
         price: "",
         category: "",
-        brand: "",
+        brand: DEFAULT_BRAND,
         stock: "",
         image: {
-            url: "",
-            public_id: "",
+          url: "",
+          public_id: "",
         },
-    });
+      });
+    }
+  }, [initialData, isOpen]);
 
-    useEffect(() => {
-        if (initialData) {
-            setFormData({
-                name: initialData.name || "",
-                description: initialData.description || "",
-                price: initialData.price || "",
-                category: initialData.category || "",
-                brand: initialData.brand || "",
-                stock: initialData.stock || "",
-                image: initialData.image || {
-                    url: "",
-                    public_id: "",
-                },
-            });
-        } else {
-            setFormData({
-                name: "",
-                description: "",
-                price: "",
-                category: "",
-                brand: "",
-                stock: "",
-                image: {
-                    url: "",
-                    public_id: "",
-                },
-            });
-        }
-    }, [initialData, isOpen]);
+  const handleChange = (e) => {
+    setFormData((prev) => ({
+      ...prev,
+      [e.target.name]: e.target.value,
+    }));
+  };
 
-    const handleChange = (e) => {
-        setFormData((prev) => ({
-            ...prev,
-            [e.target.name]: e.target.value,
-        }));
-    };
+  const handleImageChange = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
 
-    const handleImageChange = async (e) => {
-        const file = e.target.files[0];
+    if (!file.type.startsWith("image/")) {
+      toast.error("Please select a valid image.");
+      return;
+    }
 
-        if (!file) return;
+    try {
+      setUploadingImage(true);
 
-        if (!file.type.startsWith("image/")) {
-            toast.error("Please select a valid image.");
-            return;
-        }
+      const image = await uploadImage(file, token);
 
-        try {
-            setUploadingImage(true);
+      setFormData((prev) => ({
+        ...prev,
+        image,
+      }));
 
-            const image = await uploadImage(file, token);
+      toast.success("Image uploaded successfully.");
+    } catch (error) {
+      console.error(error);
+      toast.error("Image upload failed.");
+    } finally {
+      setUploadingImage(false);
+    }
+  };
 
-            setFormData((prev) => ({
-                ...prev,
-                image,
-            }));
+  const handleSubmit = (e) => {
+    e.preventDefault();
 
-            toast.success("Image uploaded successfully.");
-        } catch (error) {
-            console.error(error);
-            toast.error("Image upload failed.");
-        } finally {
-            setUploadingImage(false);
-        }
-    };
+    if (!formData.image.url) {
+      toast.error("Please upload a product image.");
+      return;
+    }
 
-    const handleSubmit = (e) => {
-        e.preventDefault();
+    // Ensure brand is always present (even though UI is removed)
+    const payload = { ...formData, brand: formData.brand || DEFAULT_BRAND };
+    onSubmit(payload);
+  };
 
-        if (!formData.image.url) {
-            toast.error("Please upload a product image.");
-            return;
-        }
+  if (!isOpen) return null;
 
-        onSubmit(formData);
-    };
+  return (
+    <div
+      className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4"
+      role="dialog"
+      aria-modal="true"
+    >
+      <div className="bg-card dark:bg-dark-card text-text-primary dark:text-dark-card-foreground rounded-2xl shadow-lift w-full max-w-lg p-8 relative max-h-[90vh] overflow-y-auto border border-border dark:border-dark-border">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-text-secondary hover:text-destructive dark:text-dark-muted-foreground dark:hover:text-dark-destructive transition-colors"
+          aria-label="Close"
+        >
+          <FaTimes size={20} />
+        </button>
 
-    if (!isOpen) return null;
+        <h2 className="text-2xl font-semibold mb-6">
+          {initialData ? "Edit Product" : "Add Product"}
+        </h2>
 
-    return (
-        <div className="fixed inset-0 bg-black/50 flex justify-center items-center z-50 p-4">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <input
+            type="text"
+            name="name"
+            placeholder="Product Name"
+            value={formData.name}
+            onChange={handleChange}
+            className="w-full bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground placeholder:text-text-muted dark:placeholder:text-dark-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-dark-ring"
+            required
+          />
 
-            <div className="bg-white rounded-xl shadow-2xl w-full max-w-lg p-8 relative max-h-[90vh] overflow-y-auto">
+          <textarea
+            name="description"
+            placeholder="Description"
+            value={formData.description}
+            onChange={handleChange}
+            rows={3}
+            className="w-full bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground placeholder:text-text-muted dark:placeholder:text-dark-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-dark-ring resize-none"
+            required
+          />
 
-                <button
-                    onClick={onClose}
-                    className="absolute top-4 right-4 text-gray-500 hover:text-red-600"
-                >
-                    <FaTimes size={20} />
-                </button>
+          <div className="grid grid-cols-2 gap-4">
+            <input
+              type="number"
+              name="price"
+              placeholder="Price"
+              value={formData.price}
+              onChange={handleChange}
+              className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground placeholder:text-text-muted dark:placeholder:text-dark-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-dark-ring"
+              required
+            />
 
-                <h2 className="text-2xl font-bold mb-6">
-                    {initialData ? "Edit Product" : "Add Product"}
-                </h2>
+            <input
+              type="number"
+              name="stock"
+              placeholder="Stock"
+              value={formData.stock}
+              onChange={handleChange}
+              className="bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground placeholder:text-text-muted dark:placeholder:text-dark-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-dark-ring"
+              required
+            />
+          </div>
 
-                <form
-                    onSubmit={handleSubmit}
-                    className="space-y-4"
-                >
+          <input
+            type="text"
+            name="category"
+            placeholder="Category"
+            value={formData.category}
+            onChange={handleChange}
+            className="w-full bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground placeholder:text-text-muted dark:placeholder:text-dark-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring dark:focus:ring-dark-ring"
+            required
+          />
 
-                    <input
-                        type="text"
-                        name="name"
-                        placeholder="Product Name"
-                        value={formData.name}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
+          {/* Brand removed from UI intentionally */}
 
-                    <textarea
-                        name="description"
-                        placeholder="Description"
-                        value={formData.description}
-                        onChange={handleChange}
-                        rows={3}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
+          <div>
+            <label className="block mb-2 font-medium text-text-secondary dark:text-dark-muted-foreground">
+              Product Image
+            </label>
 
-                    <div className="grid grid-cols-2 gap-4">
+            <input
+              type="file"
+              accept="image/*"
+              onChange={handleImageChange}
+              className="w-full bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg px-4 py-3 text-text-primary dark:text-dark-card-foreground file:mr-4 file:rounded-md file:border-0 file:bg-secondary file:px-4 file:py-2 file:text-secondary-foreground file:font-medium hover:file:bg-secondary/70"
+            />
 
-                        <input
-                            type="number"
-                            name="price"
-                            placeholder="Price"
-                            value={formData.price}
-                            onChange={handleChange}
-                            className="border rounded-lg p-3"
-                            required
-                        />
+            {uploadingImage && (
+              <p className="text-text-secondary dark:text-dark-muted-foreground mt-2">
+                Uploading image...
+              </p>
+            )}
 
-                        <input
-                            type="number"
-                            name="stock"
-                            placeholder="Stock"
-                            value={formData.stock}
-                            onChange={handleChange}
-                            className="border rounded-lg p-3"
-                            required
-                        />
+            {formData.image.url && (
+              <div className="mt-4">
+                <img
+                  src={formData.image.url}
+                  alt="Preview"
+                  className="w-40 h-40 object-cover rounded-lg border border-border dark:border-dark-border"
+                />
+              </div>
+            )}
+          </div>
 
-                    </div>
-
-                    <input
-                        type="text"
-                        name="category"
-                        placeholder="Category"
-                        value={formData.category}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                        required
-                    />
-
-                    <input
-                        type="text"
-                        name="brand"
-                        placeholder="Brand"
-                        value={formData.brand}
-                        onChange={handleChange}
-                        className="w-full border rounded-lg p-3"
-                    />
-
-                    <div>
-
-                        <label className="block mb-2 font-medium">
-                            Product Image
-                        </label>
-
-                        <input
-                            type="file"
-                            accept="image/*"
-                            onChange={handleImageChange}
-                            className="w-full border rounded-lg p-3"
-                        />
-
-                        {uploadingImage && (
-                            <p className="text-blue-600 mt-2">
-                                Uploading image...
-                            </p>
-                        )}
-
-                        {formData.image.url && (
-                            <div className="mt-4">
-
-                                <img
-                                    src={formData.image.url}
-                                    alt="Preview"
-                                    className="w-40 h-40 object-cover rounded-lg border"
-                                />
-
-                            </div>
-                        )}
-
-                    </div>
-
-                    <button
-                        type="submit"
-                        disabled={loading || uploadingImage}
-                        className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:bg-gray-400"
-                    >
-                        {loading || uploadingImage
-                            ? "Please wait..."
-                            : initialData
-                            ? "Update Product"
-                            : "Add Product"}
-                    </button>
-
-                </form>
-
-            </div>
-
-        </div>
-    );
+          <button
+            type="submit"
+            disabled={loading || uploadingImage}
+            className="w-full bg-primary text-primary-foreground py-3 rounded-lg hover:bg-primary-hover transition-colors shadow-soft disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading || uploadingImage
+              ? "Please wait..."
+              : initialData
+              ? "Update Product"
+              : "Add Product"}
+          </button>
+        </form>
+      </div>
+    </div>
+  );
 };
 
 export default ProductFormModal;

@@ -1,129 +1,186 @@
 @layer components {
-    /* ==========================================
-       Form Elements
-    ========================================== */
+  /* ==========================================
+     Form Elements
+  ========================================== */
 
-    .form-input {
-        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 shadow-sm transition-all duration-300 outline-none;
-    }
+  .form-input {
+    @apply w-full rounded-2xl border border-border bg-card px-4 py-3 text-ink placeholder:text-ink-muted shadow-soft transition-all duration-400 ease-premium outline-none;
+  }
 
-    .form-input:focus {
-        @apply border-rose-300 ring-4 ring-rose-100;
-    }
+  .form-input:focus {
+    @apply border-ring ring-4 ring-ring/25;
+  }
 
-    .form-select {
-        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 shadow-sm transition-all duration-300 outline-none;
-    }
+  .dark .form-input {
+    @apply border-dark-border bg-dark-card text-dark-ink placeholder:text-dark-ink-muted;
+  }
 
-    .form-select:focus {
-        @apply border-rose-300 ring-4 ring-rose-100;
-    }
+  .dark .form-input:focus {
+    @apply border-dark-ring ring-4 ring-dark-ring/25;
+  }
 
-    .form-textarea {
-        @apply w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-slate-800 placeholder:text-slate-400 shadow-sm transition-all duration-300 outline-none resize-none;
-    }
+  .form-select {
+    @apply w-full rounded-2xl border border-border bg-card px-4 py-3 text-ink shadow-soft transition-all duration-400 ease-premium outline-none;
+  }
 
-    .form-textarea:focus {
-        @apply border-rose-300 ring-4 ring-rose-100;
-    }
+  .form-select:focus {
+    @apply border-ring ring-4 ring-ring/25;
+  }
 
-    /* ==========================================
-       Buttons
-    ========================================== */
+  .dark .form-select {
+    @apply border-dark-border bg-dark-card text-dark-ink;
+  }
 
-    .btn-primary {
-        @apply inline-flex items-center justify-center rounded-xl bg-gradient-to-r from-rose-500 to-pink-500 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300;
-    }
+  .dark .form-select:focus {
+    @apply border-dark-ring ring-4 ring-dark-ring/25;
+  }
 
-    .btn-primary:hover {
-        @apply -translate-y-0.5 shadow-xl;
-    }
+  .form-textarea {
+    @apply w-full resize-none rounded-2xl border border-border bg-card px-4 py-3 text-ink placeholder:text-ink-muted shadow-soft transition-all duration-400 ease-premium outline-none;
+  }
 
-    .btn-secondary {
-        @apply inline-flex items-center justify-center rounded-xl border border-slate-200 bg-white px-6 py-3 font-semibold text-slate-700 shadow-sm transition-all duration-300;
-    }
+  .form-textarea:focus {
+    @apply border-ring ring-4 ring-ring/25;
+  }
 
-    .btn-secondary:hover {
-        @apply -translate-y-0.5 bg-slate-50 shadow-md;
-    }
+  .dark .form-textarea {
+    @apply border-dark-border bg-dark-card text-dark-ink placeholder:text-dark-ink-muted;
+  }
 
-    .btn-danger {
-        @apply inline-flex items-center justify-center rounded-xl bg-red-500 px-6 py-3 font-semibold text-white shadow-lg transition-all duration-300;
-    }
+  .dark .form-textarea:focus {
+    @apply border-dark-ring ring-4 ring-dark-ring/25;
+  }
 
-    .btn-danger:hover {
-        @apply -translate-y-0.5 bg-red-600 shadow-xl;
-    }
+  /* ==========================================
+     Buttons
+  ========================================== */
 
-    /* ==========================================
-       Cards
-    ========================================== */
+  /* Premium “expensive” button: calm, not flashy */
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-2xl bg-primary px-6 py-3 font-semibold text-primary-foreground shadow-soft transition-all duration-400 ease-premium;
+  }
 
-    .card {
-        @apply rounded-3xl border border-slate-100 bg-white shadow-sm transition-all duration-300;
-    }
+  .btn-primary:hover {
+    @apply -translate-y-0.5 shadow-lift;
+  }
 
-    .card-hover {
-        @apply rounded-3xl border border-slate-100 bg-white shadow-sm transition-all duration-300;
-    }
+  .btn-primary:active {
+    @apply translate-y-0 shadow-soft;
+  }
 
-    .card-hover:hover {
-        @apply -translate-y-1 shadow-2xl;
-    }
+  .dark .btn-primary {
+    @apply bg-dark-primary text-dark-primary-foreground;
+  }
 
-    /* ==========================================
-       Glass Effect
-    ========================================== */
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-2xl border border-border bg-secondary px-6 py-3 font-semibold text-secondary-foreground shadow-soft transition-all duration-400 ease-premium;
+  }
 
-    .glass {
-        @apply rounded-3xl border border-white/40 bg-white/70 backdrop-blur-xl;
-    }
+  .btn-secondary:hover {
+    @apply -translate-y-0.5 shadow-lift;
+  }
 
-    /* ==========================================
-       Section Titles
-    ========================================== */
+  .btn-danger {
+    @apply inline-flex items-center justify-center rounded-2xl bg-destructive px-6 py-3 font-semibold text-destructive-foreground shadow-soft transition-all duration-400 ease-premium;
+  }
 
-    .section-title {
-        @apply text-4xl font-bold tracking-tight text-slate-900;
-    }
+  .btn-danger:hover {
+    @apply -translate-y-0.5 shadow-lift;
+  }
 
-    .section-subtitle {
-        @apply mt-3 text-lg text-slate-500;
-    }
+  /* ==========================================
+     Cards (boutique “display surfaces”)
+  ========================================== */
 
-    /* ==========================================
-       Badges
-    ========================================== */
+  .card {
+    @apply rounded-3xl border border-border bg-card shadow-soft transition-all duration-400 ease-premium;
+  }
 
-    .badge {
-        @apply inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-sm font-medium text-rose-700;
-    }
+  .dark .card {
+    @apply border-dark-border bg-dark-card;
+  }
 
-    /* ==========================================
-       Product Images
-    ========================================== */
+  .card-hover {
+    @apply rounded-3xl border border-border bg-card shadow-soft transition-all duration-400 ease-premium;
+  }
 
-    .product-image {
-        @apply overflow-hidden rounded-2xl;
-    }
+  .card-hover:hover {
+    @apply -translate-y-1 shadow-lift;
+  }
 
-    .product-image img {
-        @apply h-full w-full object-cover transition-transform duration-500;
-    }
+  .dark .card-hover {
+    @apply border-dark-border bg-dark-card;
+  }
 
-    .product-image:hover img {
-        @apply scale-105;
-    }
+  /* ==========================================
+     Glass Effect (warm, soft)
+  ========================================== */
 
-    /* ==========================================
-       Containers
-    ========================================== */
+  .glass {
+    @apply rounded-3xl border border-white/40 bg-white/70 shadow-soft backdrop-blur-xl;
+  }
 
-    .section {
-        @apply py-20;
-    }
+  .dark .glass {
+    @apply border-white/10 bg-dark-card/60;
+  }
 
-    .container-padding {
-        @apply px-6 lg:px-8;
-    }
+  /* ==========================================
+     Section Titles
+  ========================================== */
+
+  .section-title {
+    @apply text-4xl font-semibold tracking-tight text-ink;
+  }
+
+  .dark .section-title {
+    @apply text-dark-ink;
+  }
+
+  .section-subtitle {
+    @apply mt-3 text-lg text-ink-muted;
+  }
+
+  .dark .section-subtitle {
+    @apply text-dark-ink-muted;
+  }
+
+  /* ==========================================
+     Badges
+  ========================================== */
+
+  .badge {
+    @apply inline-flex items-center rounded-full bg-accent px-3 py-1 text-sm font-medium text-accent-foreground;
+  }
+
+  .dark .badge {
+    @apply bg-dark-accent text-dark-accent-foreground;
+  }
+
+  /* ==========================================
+     Product Images
+  ========================================== */
+
+  .product-image {
+    @apply overflow-hidden rounded-2xl;
+  }
+
+  .product-image img {
+    @apply h-full w-full object-cover transition-transform duration-600 ease-premium;
+  }
+
+  .product-image:hover img {
+    @apply scale-105;
+  }
+
+  /* ==========================================
+     Containers
+  ========================================== */
+
+  .section {
+    @apply py-20;
+  }
+
+  .container-padding {
+    @apply px-6 lg:px-8;
+  }
 }

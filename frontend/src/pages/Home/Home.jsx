@@ -9,6 +9,7 @@ import MeetArtist from "../../components/common/MeetArtist";
 import CustomOrders from "../../components/common/CustomOrders";
 import InstagramGallery from "../../components/common/InstagramGallery";
 import SectionHeading from "../../components/common/SectionHeading";
+import Reveal from "../../components/common/Reveal";
 
 import ProductCard from "../../components/products/ProductCard";
 import SkeletonProductCard from "../../components/products/SkeletonProductCard";
@@ -32,7 +33,6 @@ const Home = () => {
 
     const keyword = searchParams.get("keyword") || "";
     const category = searchParams.get("category") || "";
-    const brand = searchParams.get("brand") || "";
     const sort = searchParams.get("sort") || "";
     const rating = searchParams.get("rating") || "";
     const page = Number(searchParams.get("page")) || 1;
@@ -47,7 +47,6 @@ const Home = () => {
                 const data = await getProducts({
                     keyword,
                     category,
-                    brand,
                     minPrice,
                     maxPrice,
                     rating,
@@ -80,7 +79,6 @@ const Home = () => {
     }, [
         keyword,
         category,
-        brand,
         minPrice,
         maxPrice,
         rating,
@@ -242,14 +240,28 @@ const Home = () => {
                 </div>
             </section>
 
-            {homePage && <MeetArtist />}
-
-            {homePage && <CustomOrders />}
-
-            {homePage && <Features />}
+            {homePage && (
+                <Reveal>
+                    <MeetArtist />
+                </Reveal>
+            )}
 
             {homePage && (
-                <InstagramGallery />
+                <Reveal>
+                    <CustomOrders />
+                </Reveal>
+            )}
+
+            {homePage && (
+                <Reveal>
+                    <Features />
+                </Reveal>
+            )}
+
+            {homePage && (
+                <Reveal>
+                    <InstagramGallery />
+                </Reveal>
             )}
         </div>
     );
