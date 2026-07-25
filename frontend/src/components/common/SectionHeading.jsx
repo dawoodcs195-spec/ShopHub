@@ -34,17 +34,17 @@ const SectionHeading = ({
             }`}
         >
             {badge && (
-                <span className="inline-flex items-center rounded-full bg-rose-100 px-5 py-2 text-sm font-semibold tracking-wide text-rose-700 shadow-sm">
+                <span className="inline-flex items-center rounded-full bg-rose-100 dark:bg-dark-accent px-5 py-2 text-sm font-semibold tracking-wide text-rose-700 dark:text-dark-accent-foreground shadow-sm">
                     {badge}
                 </span>
             )}
 
-            <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-[#2D2A26] md:text-5xl">
+            <h2 className="mt-6 font-serif text-4xl font-bold leading-tight text-text-primary dark:text-dark-card-foreground md:text-5xl">
                 {title}
             </h2>
 
             {subtitle && (
-                <p className="mt-5 max-w-2xl text-lg leading-8 text-[#6B655F]">
+                <p className="mt-5 max-w-2xl text-lg leading-8 text-text-secondary dark:text-dark-muted-foreground">
                     {subtitle}
                 </p>
             )}

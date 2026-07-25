@@ -18,19 +18,16 @@ export default {
         popover: "#FFFFFF",
         "popover-foreground": "#2B2A28",
 
-        // Rose Gold Primary
         primary: "#D8B2A1",
         "primary-foreground": "#2B2A28",
-        "primary-hover": "#CFA593", // subtle deepen for hover
+        "primary-hover": "#CFA593",
 
-        // Secondary / Muted
         secondary: "#F6EFEA",
         "secondary-foreground": "#2B2A28",
 
         muted: "#F3ECE6",
         "muted-foreground": "#7A6E67",
 
-        // Accent (light rose pink)
         accent: "#F4DDE3",
         "accent-foreground": "#4B2C33",
 
@@ -41,49 +38,47 @@ export default {
         input: "#E9DED8",
         ring: "#D8B2A1",
 
-        // Ink tokens
         ink: "#2B2A28",
         "ink-muted": "#7A6E67",
 
-        // Compatibility tokens for your existing classes:
-        // text-text-primary / text-text-secondary / text-text-muted
+        // ✅ Compatibility tokens (NOW theme-aware via CSS variables)
         text: {
-          primary: "#2B2A28",
-          secondary: "#7A6E67",
-          muted: "#9A8F89",
+          primary: "var(--sh-text-primary)",
+          secondary: "var(--sh-text-secondary)",
+          muted: "var(--sh-text-muted)",
         },
 
-        // Dark Theme (warm dark)
-        "dark-background": "#171312",
-        "dark-foreground": "#F7F2EE",
+        // Dark Theme — Warm Candlelight Studio
+        "dark-background": "#120D0B",
+        "dark-foreground": "#F4EEE9",
 
-        "dark-surface": "#1E1817",
-        "dark-card": "#1D1716",
-        "dark-card-foreground": "#F7F2EE",
-        "dark-popover": "#1D1716",
-        "dark-popover-foreground": "#F7F2EE",
+        "dark-surface": "#191210",
+        "dark-card": "#1B1412",
+        "dark-card-foreground": "#F4EEE9",
+        "dark-popover": "#1B1412",
+        "dark-popover-foreground": "#F4EEE9",
 
-        "dark-primary": "#D8B2A1",
-        "dark-primary-foreground": "#171312",
+        "dark-primary": "#E2BFAF",
+        "dark-primary-foreground": "#120D0B",
 
-        "dark-secondary": "#2A2322",
-        "dark-secondary-foreground": "#F7F2EE",
+        "dark-secondary": "#241A17",
+        "dark-secondary-foreground": "#F4EEE9",
 
-        "dark-muted": "#241D1C",
-        "dark-muted-foreground": "#C9BCB6",
+        "dark-muted": "#1A1311",
+        "dark-muted-foreground": "#CFC2BB",
 
-        "dark-accent": "#3A2A2D",
+        "dark-accent": "#2F1D1F",
         "dark-accent-foreground": "#F4DDE3",
 
         "dark-destructive": "#F07171",
-        "dark-destructive-foreground": "#171312",
+        "dark-destructive-foreground": "#120D0B",
 
-        "dark-border": "#3A2F2D",
-        "dark-input": "#3A2F2D",
-        "dark-ring": "#D8B2A1",
+        "dark-border": "#3A2C28",
+        "dark-input": "#3A2C28",
+        "dark-ring": "#E2BFAF",
 
-        "dark-ink": "#F7F2EE",
-        "dark-ink-muted": "#C9BCB6",
+        "dark-ink": "#F4EEE9",
+        "dark-ink-muted": "#CFC2BB",
       },
 
       fontFamily: {
@@ -94,6 +89,7 @@ export default {
         soft: "0 10px 30px -20px rgba(43, 42, 40, 0.25)",
         lift: "0 22px 60px -30px rgba(43, 42, 40, 0.35)",
         glow: "0 0 0 6px rgba(216, 178, 161, 0.22)",
+        "dark-glow": "0 0 0 6px rgba(226, 191, 175, 0.18)",
       },
 
       transitionTimingFunction: {

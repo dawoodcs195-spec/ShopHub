@@ -12,23 +12,58 @@ import {
     FaSignOutAlt,
     FaTachometerAlt,
     FaHome,
+    FaMoon,
+    FaSun,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
 import { useAuth } from "../../context/AuthContext";
 import { useCart } from "../../context/CartContext";
 import { useWishlist } from "../../context/WishlistContext";
+import { useTheme } from "../../context/ThemeContext";
+
+import SearchModal from "../common/SearchModal";
+import SearchResult from "../common/SearchResult";
+import RecentSearches from "../common/RecentSearches";
+import * as PopularSearchesModule from "../common/PopularSearches";
+
+import useDebounce from "../../hooks/useDebounce";
+import { getProducts } from "../../services/productService";
+
+const PopularSearches =
+    PopularSearchesModule.default || PopularSearchesModule.PopularSearches;
+
+const RECENT_SEARCHES_KEY = "recentSearches";
 
 const Navbar = () => {
     const navigate = useNavigate();
     const { user, logout } = useAuth();
     const { cartItems } = useCart();
     const { wishlist } = useWishlist();
+    const { theme, toggleTheme } = useTheme();
+
+    const isDark = theme === "dark";
 
     const [isMenuOpen, setMenuOpen] = useState(false);
     const [isScrolled, setScrolled] = useState(false);
     const [isVisible, setIsVisible] = useState(true);
     const [keyword, setKeyword] = useState("");
+
+    const [isSearchOpen, setIsSearchOpen] = useState(false);
+    const [searchResults, setSearchResults] = useState([]);
+    const [isSearching, setIsSearching] = useState(false);
+    const [searchError, setSearchError] = useState("");
+    const [recentSearches, setRecentSearches] = useState(() => {
+        try {
+            const raw = localStorage.getItem(RECENT_SEARCHES_KEY);
+            const parsed = raw ? JSON.parse(raw) : [];
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    });
+
+    const debouncedKeyword = useDebounce(keyword, 300);
 
     // Desktop profile dropdown
     const [isUserMenuOpen, setIsUserMenuOpen] = useState(false);
@@ -37,9 +72,52 @@ const Navbar = () => {
     const lastScrollY = useRef(0);
     const rafRef = useRef(null);
 
-    const totalCartItems = cartItems.reduce((total, item) => total + item.quantity, 0);
+    const searchRequestIdRef = useRef(0);
+    const skipDebouncedFetchRef = useRef("");
+
+    const totalCartItems = cartItems.reduce(
+        (total, item) => total + item.quantity,
+        0
+    );
 
     const closeUserMenu = useCallback(() => setIsUserMenuOpen(false), []);
+
+    const addRecentSearch = useCallback((value) => {
+        const term = String(value || "").trim();
+        if (!term) return;
+
+        setRecentSearches((prev) => {
+            const next = [term, ...prev.filter((s) => s !== term)];
+            return next.slice(0, 8);
+        });
+    }, []);
+
+    useEffect(() => {
+        try {
+            localStorage.setItem(
+                RECENT_SEARCHES_KEY,
+                JSON.stringify(recentSearches)
+            );
+        } catch {
+            // ignore
+        }
+    }, [recentSearches]);
+
+    const closeSearch = useCallback(() => {
+        searchRequestIdRef.current += 1;
+        setIsSearchOpen(false);
+        setIsSearching(false);
+        setSearchResults([]);
+        setSearchError("");
+        setKeyword("");
+        skipDebouncedFetchRef.current = "";
+    }, []);
+
+    const openSearch = useCallback(() => {
+        setIsSearchOpen(true);
+        setMenuOpen(false);
+        closeUserMenu();
+    }, [closeUserMenu]);
 
     const handleLogout = () => {
         logout();
@@ -48,16 +126,112 @@ const Navbar = () => {
         navigate("/");
     };
 
-    const handleSearch = (e) => {
-        e.preventDefault();
-        const search = keyword.trim();
-        if (search) {
-            navigate(`/?keyword=${encodeURIComponent(search)}`);
-        } else {
-            navigate("/");
-        }
-        setMenuOpen(false);
+    const handleToggleTheme = () => {
+        toggleTheme();
         closeUserMenu();
+    };
+
+    const fetchSearchResults = useCallback(async (term) => {
+        const currentId = (searchRequestIdRef.current += 1);
+
+        setIsSearching(true);
+        setSearchError("");
+        setSearchResults([]);
+
+        try {
+            const data = await getProducts({
+                keyword: term,
+                page: 1,
+                limit: 8,
+            });
+
+            let products = [];
+
+            if (Array.isArray(data)) {
+                products = data;
+            } else if (Array.isArray(data?.products)) {
+                products = data.products;
+            } else if (Array.isArray(data?.data)) {
+                products = data.data;
+            } else if (Array.isArray(data?.data?.products)) {
+                products = data.data.products;
+            }
+
+            if (currentId !== searchRequestIdRef.current) return;
+
+            setSearchResults(products);
+        } catch (err) {
+            if (currentId !== searchRequestIdRef.current) return;
+
+            setSearchResults([]);
+            setSearchError("Failed to load search results.");
+        } finally {
+            if (currentId !== searchRequestIdRef.current) return;
+            setIsSearching(false);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (!isSearchOpen) return;
+
+        const term = debouncedKeyword.trim();
+
+        if (!term) {
+            searchRequestIdRef.current += 1;
+            setIsSearching(false);
+            setSearchResults([]);
+            setSearchError("");
+            return;
+        }
+
+        if (skipDebouncedFetchRef.current === term) {
+            skipDebouncedFetchRef.current = "";
+            return;
+        }
+
+        fetchSearchResults(term);
+    }, [debouncedKeyword, isSearchOpen, fetchSearchResults]);
+
+    useEffect(() => {
+        if (!isSearchOpen) return;
+
+        const onKeyDown = (e) => {
+            if (e.key !== "Enter") return;
+
+            const search = keyword.trim();
+            if (!search) return;
+
+            e.preventDefault();
+
+            addRecentSearch(search);
+            navigate(`/?keyword=${encodeURIComponent(search)}`);
+            closeSearch();
+        };
+
+        document.addEventListener("keydown", onKeyDown);
+
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+        };
+    }, [isSearchOpen, keyword, addRecentSearch, navigate, closeSearch]);
+
+    const handleSelectSuggestion = (value) => {
+        const term = String(value || "").trim();
+        if (!term) return;
+
+        setKeyword(term);
+        addRecentSearch(term);
+
+        if (isSearchOpen) {
+            skipDebouncedFetchRef.current = term;
+            fetchSearchResults(term);
+        }
+    };
+
+    const handleResultClose = () => {
+        const term = keyword.trim();
+        if (term) addRecentSearch(term);
+        closeSearch();
     };
 
     // Hide on scroll down, show on scroll up
@@ -92,7 +266,6 @@ const Navbar = () => {
 
                 if (currentY > prevY && currentY > HIDE_AFTER) {
                     setIsVisible(false);
-                    // also close user menu when navbar hides (prevents floating overlay)
                     closeUserMenu();
                 } else if (currentY < prevY) {
                     setIsVisible(true);
@@ -136,8 +309,14 @@ const Navbar = () => {
     }, [isUserMenuOpen, closeUserMenu]);
 
     const menuVariants = {
-        open: { x: 0, transition: { type: "spring", stiffness: 300, damping: 30 } },
-        closed: { x: "100%", transition: { type: "spring", stiffness: 300, damping: 30 } },
+        open: {
+            x: 0,
+            transition: { type: "spring", stiffness: 300, damping: 30 },
+        },
+        closed: {
+            x: "100%",
+            transition: { type: "spring", stiffness: 300, damping: 30 },
+        },
     };
 
     const NavItem = ({ to, children, icon: Icon }) => (
@@ -159,6 +338,8 @@ const Navbar = () => {
             <span>{children}</span>
         </NavLink>
     );
+
+    const trimmedKeyword = keyword.trim();
 
     return (
         <>
@@ -188,14 +369,15 @@ const Navbar = () => {
 
                         {/* Desktop Search */}
                         <div className="hidden md:flex flex-grow max-w-xl mx-8">
-                            <form onSubmit={handleSearch} className="relative w-full">
+                            <div className="relative w-full">
                                 <input
                                     type="text"
-                                    placeholder="Search products..."
+                                    placeholder="Search handmade creations..."
                                     value={keyword}
-                                    onChange={(e) => setKeyword(e.target.value)}
+                                    readOnly
+                                    onClick={openSearch}
                                     className={[
-                                        "w-full rounded-lg pl-10 pr-4 py-2",
+                                        "w-full rounded-lg pl-10 pr-4 py-2 cursor-pointer",
                                         "border border-border/80 dark:border-dark-border",
                                         "bg-card/70 dark:bg-dark-secondary/70",
                                         "text-card-foreground dark:text-dark-card-foreground",
@@ -203,12 +385,33 @@ const Navbar = () => {
                                         "focus:outline-none focus:ring-2 focus:ring-ring/50 dark:focus:ring-dark-ring/40",
                                     ].join(" ")}
                                 />
-                                <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-dark-muted-foreground" />
-                            </form>
+                                <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-dark-muted-foreground" />
+                            </div>
                         </div>
 
                         {/* Desktop Menu */}
                         <div className="hidden md:flex items-center space-x-2">
+                            {/* Theme toggle */}
+                            <motion.button
+                                type="button"
+                                onClick={handleToggleTheme}
+                                whileHover={{ y: -1 }}
+                                whileTap={{ scale: 0.98 }}
+                                className="p-2 rounded-full text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 hover:text-card-foreground dark:hover:text-dark-card-foreground transition-colors"
+                                aria-label={
+                                    isDark
+                                        ? "Switch to light mode"
+                                        : "Switch to dark mode"
+                                }
+                                title={isDark ? "Light mode" : "Dark mode"}
+                            >
+                                {isDark ? (
+                                    <FaSun size={18} />
+                                ) : (
+                                    <FaMoon size={18} />
+                                )}
+                            </motion.button>
+
                             <NavLink
                                 to="/wishlist"
                                 onClick={closeUserMenu}
@@ -239,7 +442,9 @@ const Navbar = () => {
                                 <div className="relative" ref={userMenuRef}>
                                     <button
                                         type="button"
-                                        onClick={() => setIsUserMenuOpen((v) => !v)}
+                                        onClick={() =>
+                                            setIsUserMenuOpen((v) => !v)
+                                        }
                                         className="flex items-center p-2 rounded-full hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
                                         aria-haspopup="menu"
                                         aria-expanded={isUserMenuOpen}
@@ -258,19 +463,40 @@ const Navbar = () => {
                                     <AnimatePresence>
                                         {isUserMenuOpen && (
                                             <motion.div
-                                                initial={{ opacity: 0, y: 8, scale: 0.98 }}
-                                                animate={{ opacity: 1, y: 0, scale: 1 }}
-                                                exit={{ opacity: 0, y: 8, scale: 0.98 }}
-                                                transition={{ duration: 0.18, ease: [0.22, 1, 0.36, 1] }}
+                                                initial={{
+                                                    opacity: 0,
+                                                    y: 8,
+                                                    scale: 0.98,
+                                                }}
+                                                animate={{
+                                                    opacity: 1,
+                                                    y: 0,
+                                                    scale: 1,
+                                                }}
+                                                exit={{
+                                                    opacity: 0,
+                                                    y: 8,
+                                                    scale: 0.98,
+                                                }}
+                                                transition={{
+                                                    duration: 0.18,
+                                                    ease: [0.22, 1, 0.36, 1],
+                                                }}
                                                 className="absolute right-0 mt-2 w-48 bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg shadow-lg p-2 z-50"
                                                 role="menu"
                                             >
-                                                <NavItem to="/profile" icon={FaUser}>
+                                                <NavItem
+                                                    to="/profile"
+                                                    icon={FaUser}
+                                                >
                                                     Profile
                                                 </NavItem>
 
                                                 {user.role === "admin" && (
-                                                    <NavItem to="/admin" icon={FaTachometerAlt}>
+                                                    <NavItem
+                                                        to="/admin"
+                                                        icon={FaTachometerAlt}
+                                                    >
                                                         Admin
                                                     </NavItem>
                                                 )}
@@ -313,6 +539,89 @@ const Navbar = () => {
                 </nav>
             </motion.header>
 
+            <SearchModal
+                open={isSearchOpen}
+                keyword={keyword}
+                setKeyword={setKeyword}
+                onClose={closeSearch}
+            >
+                {trimmedKeyword ? (
+                    <div>
+                        {isSearching && (
+                            <div className="px-6 py-6 space-y-4">
+                                {[0, 1, 2].map((i) => (
+                                    <div
+                                        key={i}
+                                        className="flex items-center gap-5 animate-pulse"
+                                    >
+                                        <div className="h-20 w-20 rounded-2xl bg-slate-100" />
+                                        <div className="flex-1">
+                                            <div className="h-3 w-24 rounded bg-slate-100" />
+                                            <div className="mt-3 h-5 w-3/5 rounded bg-slate-100" />
+                                            <div className="mt-3 h-4 w-28 rounded bg-slate-100" />
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+
+                        {!isSearching && searchError && (
+                            <div className="px-6 py-6 text-sm text-red-600">
+                                {searchError}
+                            </div>
+                        )}
+
+                        {!isSearching && !searchError && (
+                            <>
+                                {searchResults.length > 0 ? (
+                                    <div>
+                                        <AnimatePresence initial={false}>
+                                            {searchResults.map((product) => (
+                                                <SearchResult
+                                                    key={product._id}
+                                                    product={product}
+                                                    onClose={handleResultClose}
+                                                />
+                                            ))}
+                                        </AnimatePresence>
+                                    </div>
+                                ) : (
+                                    <div className="px-6 py-10">
+                                        <div className="rounded-2xl border border-slate-200 bg-[#FCFAF7] px-6 py-8 text-center">
+                                            <p className="text-lg font-semibold text-[#2D2A26]">
+                                                ✨ No creations found
+                                            </p>
+                                            <p className="mt-2 text-sm text-[#7A7067]">
+                                                We couldn't find any creations
+                                                matching your search. Try
+                                                another keyword.
+                                            </p>
+                                        </div>
+                                    </div>
+                                )}
+                            </>
+                        )}
+                    </div>
+                ) : (
+                    <>
+                        <RecentSearches
+                            searches={recentSearches}
+                            onSelect={handleSelectSuggestion}
+                            onRemove={(value) =>
+                                setRecentSearches((prev) =>
+                                    prev.filter((s) => s !== value)
+                                )
+                            }
+                            onClear={() => setRecentSearches([])}
+                        />
+
+                        {PopularSearches && (
+                            <PopularSearches onSelect={handleSelectSuggestion} />
+                        )}
+                    </>
+                )}
+            </SearchModal>
+
             {/* Mobile Menu */}
             <AnimatePresence>
                 {isMenuOpen && (
@@ -339,14 +648,15 @@ const Navbar = () => {
                             </button>
                         </div>
 
-                        <form onSubmit={handleSearch} className="relative mb-8">
+                        <div className="relative mb-6">
                             <input
                                 type="text"
-                                placeholder="Search products..."
+                                placeholder="Search handmade creations..."
                                 value={keyword}
-                                onChange={(e) => setKeyword(e.target.value)}
+                                readOnly
+                                onClick={openSearch}
                                 className={[
-                                    "w-full rounded-lg pl-10 pr-4 py-2",
+                                    "w-full rounded-lg pl-10 pr-4 py-2 cursor-pointer",
                                     "border border-border/80 dark:border-dark-border",
                                     "bg-card/70 dark:bg-dark-secondary/70",
                                     "text-card-foreground dark:text-dark-card-foreground",
@@ -354,8 +664,20 @@ const Navbar = () => {
                                     "focus:outline-none focus:ring-2 focus:ring-ring/50 dark:focus:ring-dark-ring/40",
                                 ].join(" ")}
                             />
-                            <FaSearch className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-dark-muted-foreground" />
-                        </form>
+                            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-dark-muted-foreground" />
+                        </div>
+
+                        {/* Mobile theme toggle */}
+                        <button
+                            type="button"
+                            onClick={handleToggleTheme}
+                            className="mb-6 w-full flex items-center justify-between rounded-2xl border border-border dark:border-dark-border bg-card/70 dark:bg-dark-secondary/70 px-4 py-3 text-card-foreground dark:text-dark-card-foreground"
+                        >
+                            <span className="font-semibold">
+                                {isDark ? "Light Mode" : "Dark Mode"}
+                            </span>
+                            {isDark ? <FaSun /> : <FaMoon />}
+                        </button>
 
                         <nav className="flex flex-col space-y-2">
                             <NavItem to="/" icon={FaHome}>

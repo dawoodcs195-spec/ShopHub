@@ -1,8 +1,15 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import toast from "react-hot-toast";
-import { FaShippingFast, FaCreditCard, FaLock, FaChevronDown, FaShoppingBag, FaCheckCircle } from "react-icons/fa";
+import {
+  FaShippingFast,
+  FaCreditCard,
+  FaLock,
+  FaShoppingBag,
+  FaCheckCircle,
+  FaMoneyBillWave,
+} from "react-icons/fa";
 
 import { useCart } from "../../context/CartContext";
 import { useAuth } from "../../context/AuthContext";
@@ -11,221 +18,651 @@ import { validateCoupon } from "../../services/couponService";
 import Input from "../../components/forms/Input";
 
 const Checkout = () => {
-    const navigate = useNavigate();
-    const { cartItems, shippingAddress: initialShippingAddress, paymentMethod: initialPaymentMethod, clearCart, appliedCoupon, discount, applyCoupon, clearCoupon, saveShippingAddress, savePaymentMethod } = useCart();
-    const { token } = useAuth();
+  const navigate = useNavigate();
 
-    const [activeStep, setActiveStep] = useState(1);
-    const [shippingAddress, setShippingAddress] = useState({
-        fullName: initialShippingAddress?.fullName || "",
-        phone: initialShippingAddress?.phone || "",
-        address: initialShippingAddress?.address || "",
-        city: initialShippingAddress?.city || "",
-        postalCode: initialShippingAddress?.postalCode || "",
-        country: initialShippingAddress?.country || "Pakistan",
-    });
-    const [paymentMethod, setPaymentMethod] = useState(initialPaymentMethod || "Stripe");
-    const [processing, setProcessing] = useState(false);
-    const [couponCode, setCouponCode] = useState(appliedCoupon?.code || "");
+  const {
+    cartItems,
+    shippingAddress: initialShippingAddress,
+    paymentMethod: initialPaymentMethod,
+    clearCart,
+    appliedCoupon,
+    discount,
+    applyCoupon,
+    clearCoupon,
+    saveShippingAddress,
+    savePaymentMethod,
+  } = useCart();
 
-    const itemsPrice = cartItems.reduce((total, item) => total + item.price * item.quantity, 0);
-    const shippingPrice = itemsPrice > 0 ? 250 : 0;
-    const taxPrice = 0;
-    const totalPrice = Math.max(itemsPrice + shippingPrice + taxPrice - discount, 0);
+  const { token } = useAuth();
 
-    const handleShippingChange = (e) => {
-        setShippingAddress({ ...shippingAddress, [e.target.name]: e.target.value });
-    };
+  const [step, setStep] = useState(1);
+  const [shippingComplete, setShippingComplete] = useState(false);
+  const [paymentComplete, setPaymentComplete] = useState(false);
 
-    const handleShippingSubmit = () => {
-        for (const key in shippingAddress) {
-            if (!shippingAddress[key]) {
-                toast.error("Please fill all shipping fields.");
-                return;
-            }
-        }
-        saveShippingAddress(shippingAddress);
-        setActiveStep(2);
-    };
+  const [shippingAddress, setShippingAddress] = useState({
+    fullName: initialShippingAddress?.fullName || "",
+    phone: initialShippingAddress?.phone || "",
+    address: initialShippingAddress?.address || "",
+    city: initialShippingAddress?.city || "",
+    postalCode: initialShippingAddress?.postalCode || "",
+    country: initialShippingAddress?.country || "Pakistan",
+  });
 
-    const placeOrder = async () => {
-        if (activeStep < 2) {
-            toast.error("Please complete the shipping information first.");
-            return;
-        }
-        savePaymentMethod(paymentMethod);
-        setProcessing(true);
-        try {
-            const orderData = {
-                orderItems: cartItems.map(item => ({ product: item._id, name: item.name, image: item.image, price: item.price, quantity: item.quantity })),
-                shippingAddress, paymentMethod, itemsPrice, shippingPrice, taxPrice, totalPrice,
-                coupon: appliedCoupon?.code || null,
-                discount,
-            };
+  const [paymentMethod, setPaymentMethod] = useState(
+    initialPaymentMethod || "Stripe"
+  );
 
-            if (paymentMethod === "Stripe") {
-                navigate("/stripe-payment", { state: { orderData } });
-            } else { // Cash on Delivery
-                await createOrder(orderData, token);
-                clearCart();
-                toast.success("Your order has been placed successfully!");
-                navigate("/my-orders");
-            }
-        } catch (err) {
-            toast.error(err.response?.data?.message || "Failed to place order.");
-        } finally {
-            setProcessing(false);
-        }
-    };
+  const [processing, setProcessing] = useState(false);
+  const [couponCode, setCouponCode] = useState(appliedCoupon?.code || "");
 
-    const handleApplyCoupon = async () => {
-        if (!couponCode.trim()) return;
-        try {
-            const data = await validateCoupon(couponCode, itemsPrice);
-            applyCoupon(data.coupon, data.discount);
-            toast.success("Coupon applied successfully!");
-        } catch (error) {
-            toast.error(error.response?.data?.message || "Invalid or expired coupon.");
-        }
-    };
+  const itemsPrice = cartItems.reduce(
+    (total, item) => total + item.price * item.quantity,
+    0
+  );
+  const shippingPrice = itemsPrice > 0 ? 250 : 0;
+  const taxPrice = 0;
+  const totalPrice = Math.max(itemsPrice + shippingPrice + taxPrice - discount, 0);
 
-    if (cartItems.length === 0 && !processing) {
-        return (
-             <div className="bg-background min-h-screen flex items-center justify-center">
-                <div className="text-center py-20 bg-surface rounded-lg shadow-soft max-w-2xl mx-auto w-full">
-                    <FaShoppingBag className="mx-auto text-5xl text-text-muted mb-6" />
-                    <h1 className="text-3xl font-serif font-bold text-text-primary mb-4">Your Cart is Empty</h1>
-                    <p className="text-text-secondary mb-8">You need to add items to your cart before you can checkout.</p>
-                    <Link to="/" className="bg-primary text-white font-semibold px-6 py-3 rounded-lg hover:bg-primary-hover shadow-soft">
-                        Continue Shopping
-                    </Link>
-                </div>
-            </div>
-        );
+  const steps = useMemo(
+    () => [
+      {
+        number: 1,
+        title: "Shipping",
+        icon: FaShippingFast,
+        isDone: shippingComplete,
+        isEnabled: true,
+      },
+      {
+        number: 2,
+        title: "Payment",
+        icon: FaCreditCard,
+        isDone: paymentComplete,
+        isEnabled: shippingComplete,
+      },
+      {
+        number: 3,
+        title: "Review",
+        icon: FaCheckCircle,
+        isDone: false,
+        isEnabled: shippingComplete && paymentComplete,
+      },
+    ],
+    [shippingComplete, paymentComplete]
+  );
+
+  const currentStepProgress = useMemo(() => {
+    if (step <= 1) return 0;
+    if (step === 2) return 50;
+    return 100;
+  }, [step]);
+
+  const goToStep = (n) => {
+    const target = steps.find((s) => s.number === n);
+    if (!target) return;
+    if (!target.isEnabled && n > step) return;
+    setStep(n);
+  };
+
+  const handleShippingChange = (e) => {
+    setShippingAddress({ ...shippingAddress, [e.target.name]: e.target.value });
+  };
+
+  const handleShippingContinue = () => {
+    for (const key in shippingAddress) {
+      if (!shippingAddress[key]) {
+        toast.error("Please fill all shipping fields.");
+        return;
+      }
+    }
+    saveShippingAddress(shippingAddress);
+    setShippingComplete(true);
+    setStep(2);
+  };
+
+  const handlePaymentContinue = () => {
+    if (!shippingComplete) {
+      toast.error("Please complete shipping first.");
+      return;
+    }
+    if (!paymentMethod) {
+      toast.error("Please select a payment method.");
+      return;
+    }
+    savePaymentMethod(paymentMethod);
+    setPaymentComplete(true);
+    setStep(3);
+  };
+
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+
+    try {
+      const data = await validateCoupon(couponCode, itemsPrice);
+      applyCoupon(data.coupon, data.discount);
+      toast.success("Coupon applied successfully!");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Invalid or expired coupon.");
+    }
+  };
+
+  const placeOrder = async () => {
+    if (!shippingComplete) {
+      toast.error("Please complete shipping information.");
+      setStep(1);
+      return;
     }
 
-    const AccordionStep = ({ stepNumber, title, icon: Icon, children, isCompleted, isOpen, onToggle }) => (
-        <div className="border border-border rounded-lg overflow-hidden bg-surface shadow-soft">
-            <button onClick={onToggle} className="w-full flex justify-between items-center p-4" disabled={!isCompleted && stepNumber > activeStep}>
-                <div className="flex items-center gap-4">
-                    <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-colors ${isCompleted ? 'bg-primary text-white' : 'bg-border text-text-primary'}`}>
-                        {isCompleted ? <FaCheckCircle /> : stepNumber}
-                    </div>
-                    <h3 className="font-semibold text-lg text-text-primary">{title}</h3>
-                </div>
-                <FaChevronDown className={`text-text-secondary transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
-            </button>
-            <AnimatePresence>
-                {isOpen && (
-                    <motion.div
-                        initial={{ height: 0, opacity: 0 }}
-                        animate={{ height: 'auto', opacity: 1 }}
-                        exit={{ height: 0, opacity: 0 }}
-                        className="overflow-hidden"
-                    >
-                        <div className="p-6 border-t border-border">{children}</div>
-                    </motion.div>
-                )}
-            </AnimatePresence>
-        </div>
-    );
+    if (!paymentComplete) {
+      toast.error("Please confirm your payment method.");
+      setStep(2);
+      return;
+    }
 
-    const OrderSummary = () => (
-        <div className="bg-surface rounded-lg shadow-soft p-6 sticky top-24 space-y-4">
-            <h2 className="text-2xl font-serif font-bold text-text-primary">Order Summary</h2>
-            <div className="space-y-2 max-h-60 overflow-y-auto pr-2">
-                {cartItems.map(item => (
-                    <div key={item._id} className="flex justify-between items-center text-sm">
-                        <div className="flex items-center gap-3">
-                            <img src={item.image?.url} alt={item.name} className="w-12 h-12 rounded object-cover"/>
-                            <div>
-                                <p className="text-text-primary font-semibold">{item.name}</p>
-                                <p className="text-text-secondary">Qty: {item.quantity}</p>
-                            </div>
-                        </div>
-                        <p className="text-text-primary font-semibold">Rs. {item.price * item.quantity}</p>
-                    </div>
-                ))}
-            </div>
-            <div className="border-t border-border pt-4 space-y-2 text-text-secondary">
-                <div className="flex justify-between"><span>Subtotal</span><span>Rs. {itemsPrice.toLocaleString()}</span></div>
-                <div className="flex justify-between"><span>Shipping</span><span>Rs. {shippingPrice.toLocaleString()}</span></div>
-                {discount > 0 && <div className="flex justify-between text-green-600 font-semibold"><span>Discount ({appliedCoupon?.code})</span><span>- Rs. {discount.toLocaleString()}</span></div>}
-                <div className="flex justify-between font-bold text-text-primary text-lg pt-2 border-t border-border mt-2"><span>Total</span><span className="text-primary">Rs. {totalPrice.toLocaleString()}</span></div>
-            </div>
-        </div>
-    );
-    
+    savePaymentMethod(paymentMethod);
+    setProcessing(true);
+
+    try {
+      const orderData = {
+        orderItems: cartItems.map((item) => ({
+          product: item._id,
+          name: item.name,
+          image: item.image,
+          price: item.price,
+          quantity: item.quantity,
+        })),
+        shippingAddress,
+        paymentMethod,
+        itemsPrice,
+        shippingPrice,
+        taxPrice,
+        totalPrice,
+        coupon: appliedCoupon?.code || null,
+        discount,
+      };
+
+      if (paymentMethod === "Stripe") {
+        navigate("/stripe-payment", { state: { orderData } });
+        return;
+      }
+
+      // Cash on Delivery
+      const created = await createOrder(orderData, token);
+      clearCart();
+
+      navigate("/order-success", {
+        state: {
+          order: created?.order || created?.data?.order || created,
+          paymentMethod: "Cash on Delivery",
+          totalPrice: orderData.totalPrice,
+          shippingAddress: orderData.shippingAddress,
+          message:
+            "Thank you for choosing handmade. We’ll carefully prepare your order and pack it beautifully before it reaches you.",
+        },
+      });
+    } catch (err) {
+      toast.error(err.response?.data?.message || "Failed to place order.");
+    } finally {
+      setProcessing(false);
+    }
+  };
+
+  if (cartItems.length === 0 && !processing) {
     return (
-        <div className="bg-background min-h-screen">
-            <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
-                <div className="text-center mb-12">
-                    <h1 className="text-4xl font-serif font-bold text-text-primary">Checkout</h1>
-                </div>
-
-                <div className="grid lg:grid-cols-3 lg:gap-12">
-                    <div className="lg:col-span-2 space-y-6">
-                        <AccordionStep
-                            stepNumber={1} title="Shipping Information" icon={FaShippingFast}
-                            isOpen={activeStep === 1} onToggle={() => setActiveStep(1)} isCompleted={activeStep > 1}
-                        >
-                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                                <Input name="fullName" placeholder="Full Name" value={shippingAddress.fullName} onChange={handleShippingChange} />
-                                <Input name="phone" placeholder="Phone Number" value={shippingAddress.phone} onChange={handleShippingChange} />
-                                <div className="sm:col-span-2"><Input name="address" placeholder="Street Address" value={shippingAddress.address} onChange={handleShippingChange} /></div>
-                                <Input name="city" placeholder="City" value={shippingAddress.city} onChange={handleShippingChange} />
-                                <Input name="postalCode" placeholder="Postal Code" value={shippingAddress.postalCode} onChange={handleShippingChange} />
-                                <Input name="country" placeholder="Country" value={shippingAddress.country} onChange={handleShippingChange} />
-                            </div>
-                            <button onClick={handleShippingSubmit} className="mt-6 w-full sm:w-auto bg-primary text-white font-semibold py-2 px-6 rounded-lg hover:bg-primary-hover shadow-soft">Continue to Payment</button>
-                        </AccordionStep>
-
-                        <AccordionStep
-                            stepNumber={2} title="Payment Method" icon={FaCreditCard}
-                            isOpen={activeStep === 2} onToggle={() => activeStep > 1 && setActiveStep(2)} isCompleted={false}
-                        >
-                             <div className="space-y-4">
-                                <label className="flex items-center gap-4 p-4 border border-border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                                    <input type="radio" name="paymentMethod" value="Stripe" checked={paymentMethod === 'Stripe'} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5 accent-primary"/>
-                                    <span>Pay with Card (Stripe)</span>
-                                </label>
-                                 <label className="flex items-center gap-4 p-4 border border-border rounded-lg cursor-pointer has-[:checked]:bg-primary/10 has-[:checked]:border-primary transition-colors">
-                                    <input type="radio" name="paymentMethod" value="Cash on Delivery" checked={paymentMethod === 'Cash on Delivery'} onChange={(e) => setPaymentMethod(e.target.value)} className="w-5 h-5 accent-primary"/>
-                                    <span>Cash on Delivery</span>
-                                </label>
-                            </div>
-                        </AccordionStep>
-                    </div>
-
-                    <div className="lg:col-span-1 mt-8 lg:mt-0">
-                        <div className="space-y-6">
-                            <OrderSummary />
-                            
-                            <div className="bg-surface rounded-lg shadow-soft p-6">
-                                <h3 className="text-lg font-semibold text-text-primary mb-3">Discount Code</h3>
-                                {appliedCoupon ? (
-                                     <div className="text-center">
-                                        <p className="text-green-600 font-semibold">Coupon '{appliedCoupon.code}' applied!</p>
-                                        <button onClick={clearCoupon} className="text-xs text-red-500 hover:underline">Remove</button>
-                                    </div>
-                                ) : (
-                                    <div className="flex gap-2">
-                                        <Input value={couponCode} onChange={(e) => setCouponCode(e.target.value.toUpperCase())} placeholder="Enter code" className="text-sm" />
-                                        <button onClick={handleApplyCoupon} className="bg-primary text-white font-semibold px-4 rounded-lg text-sm hover:bg-primary-hover">Apply</button>
-                                    </div>
-                                )}
-                            </div>
-
-                            <button onClick={placeOrder} disabled={processing || activeStep < 2} className="w-full mt-4 flex items-center justify-center gap-3 bg-primary text-white font-semibold py-3 rounded-lg shadow-soft hover:bg-primary-hover transition-all disabled:bg-text-muted disabled:cursor-not-allowed">
-                                <FaLock/>
-                                {processing ? 'Processing...' : (paymentMethod === 'Stripe' ? 'Continue to Payment' : 'Place Order')}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            </div>
+      <div className="bg-background dark:bg-dark-background min-h-screen flex items-center justify-center px-4">
+        <div className="text-center py-20 bg-surface dark:bg-dark-card rounded-[28px] border border-border dark:border-dark-border shadow-soft max-w-2xl mx-auto w-full">
+          <FaShoppingBag className="mx-auto text-5xl text-text-secondary dark:text-dark-muted-foreground mb-6" />
+          <h1 className="text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground mb-4">
+            Your Cart is Empty
+          </h1>
+          <p className="text-text-secondary dark:text-dark-muted-foreground mb-8">
+            You need to add items to your cart before you can checkout.
+          </p>
+          <Link
+            to="/"
+            className="inline-flex bg-primary text-white font-semibold px-6 py-3 rounded-xl hover:bg-primary-hover shadow-soft transition-colors"
+          >
+            Continue Shopping
+          </Link>
         </div>
+      </div>
     );
+  }
+
+  const PaymentOption = ({ value, label, description, icon: Icon }) => {
+    const selected = paymentMethod === value;
+
+    return (
+      <label
+        className={[
+          "flex items-start gap-4 p-4 sm:p-5 rounded-2xl cursor-pointer transition-all border",
+          selected
+            ? "border-primary bg-primary/10 shadow-soft"
+            : "border-border dark:border-dark-border bg-card dark:bg-dark-card hover:bg-secondary/40 dark:hover:bg-dark-secondary/30",
+        ].join(" ")}
+      >
+        <input
+          type="radio"
+          name="paymentMethod"
+          value={value}
+          checked={selected}
+          onChange={(e) => setPaymentMethod(e.target.value)}
+          className="mt-1 w-5 h-5 accent-[#B76E79]"
+        />
+
+        <div className="flex-1">
+          <div className="flex items-center gap-3">
+            <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-secondary dark:bg-dark-secondary/40 text-primary shadow-sm">
+              <Icon />
+            </span>
+
+            <span className="text-base sm:text-lg font-semibold text-text-primary dark:text-dark-card-foreground">
+              {label}
+            </span>
+          </div>
+
+          <p className="mt-2 text-sm text-text-secondary dark:text-dark-muted-foreground">
+            {description}
+          </p>
+        </div>
+      </label>
+    );
+  };
+
+  const OrderSummary = () => (
+    <div className="bg-surface dark:bg-dark-card rounded-2xl border border-border dark:border-dark-border shadow-soft p-6 sticky top-24 space-y-5">
+      <h2 className="text-2xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
+        Order Summary
+      </h2>
+
+      <div className="space-y-3 max-h-60 overflow-y-auto pr-2">
+        {cartItems.map((item) => (
+          <div
+            key={item._id}
+            className="flex justify-between items-center gap-4 text-sm"
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <img
+                src={item.image?.url}
+                alt={item.name}
+                className="w-12 h-12 rounded-lg object-cover border border-border dark:border-dark-border"
+              />
+              <div className="min-w-0">
+                <p className="text-text-primary dark:text-dark-card-foreground font-semibold truncate">
+                  {item.name}
+                </p>
+                <p className="text-text-secondary dark:text-dark-muted-foreground">
+                  Qty: {item.quantity}
+                </p>
+              </div>
+            </div>
+
+            <p className="text-text-primary dark:text-dark-card-foreground font-semibold whitespace-nowrap">
+              Rs. {(item.price * item.quantity).toLocaleString()}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-border dark:border-dark-border pt-4 space-y-2 text-text-secondary dark:text-dark-muted-foreground">
+        <div className="flex justify-between">
+          <span>Subtotal</span>
+          <span className="text-text-primary dark:text-dark-card-foreground">
+            Rs. {itemsPrice.toLocaleString()}
+          </span>
+        </div>
+        <div className="flex justify-between">
+          <span>Shipping</span>
+          <span className="text-text-primary dark:text-dark-card-foreground">
+            Rs. {shippingPrice.toLocaleString()}
+          </span>
+        </div>
+
+        {discount > 0 && (
+          <div className="flex justify-between text-green-700 dark:text-emerald-400 font-semibold">
+            <span>Discount ({appliedCoupon?.code})</span>
+            <span>- Rs. {discount.toLocaleString()}</span>
+          </div>
+        )}
+
+        <div className="flex justify-between font-bold text-text-primary dark:text-dark-card-foreground text-lg pt-3 border-t border-border dark:border-dark-border mt-2">
+          <span>Total</span>
+          <span className="text-primary">Rs. {totalPrice.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-secondary dark:text-dark-muted-foreground text-center">
+        Secure checkout • Carefully packed • Handmade with love
+      </p>
+    </div>
+  );
+
+  const panelMotion = {
+    initial: { opacity: 0, y: 10 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: 10 },
+    transition: { duration: 0.3, ease: [0.22, 1, 0.36, 1] },
+  };
+
+  return (
+    <div className="bg-background dark:bg-dark-background min-h-screen">
+      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+        <div className="text-center mb-10">
+          <h1 className="text-4xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
+            Checkout
+          </h1>
+          <p className="mt-3 text-text-secondary dark:text-dark-muted-foreground">
+            A calm, secure finish to your handmade order.
+          </p>
+        </div>
+
+        {/* Stepper with progress line */}
+        <div className="mb-10">
+          <div className="rounded-[28px] border border-border dark:border-dark-border bg-surface dark:bg-dark-card shadow-soft p-5 sm:p-6">
+            <div className="relative px-3 sm:px-6">
+              <div className="absolute left-6 right-6 top-6 h-[2px] rounded-full bg-border/70 dark:bg-dark-border/70" />
+              <motion.div
+                className="absolute left-6 right-6 top-6 h-[2px] rounded-full bg-primary"
+                initial={false}
+                animate={{ scaleX: currentStepProgress / 100 }}
+                transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                style={{ transformOrigin: "left" }}
+              />
+            </div>
+
+            <div className="mt-2 flex items-center justify-between gap-4">
+              {steps.map((s) => {
+                const Icon = s.icon;
+                const isActive = step === s.number;
+                const clickable = s.number <= step || s.isEnabled;
+
+                return (
+                  <button
+                    key={s.number}
+                    type="button"
+                    onClick={() => clickable && goToStep(s.number)}
+                    className={[
+                      "flex-1 text-left rounded-2xl px-4 py-3 transition-colors",
+                      clickable
+                        ? "hover:bg-secondary/40 dark:hover:bg-dark-secondary/30"
+                        : "cursor-not-allowed opacity-60",
+                      isActive ? "bg-secondary/40 dark:bg-dark-secondary/30" : "",
+                    ].join(" ")}
+                    disabled={!clickable}
+                  >
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={[
+                          "inline-flex h-10 w-10 items-center justify-center rounded-xl border shadow-sm",
+                          s.isDone
+                            ? "bg-primary border-primary text-white"
+                            : isActive
+                            ? "bg-accent border-border text-accent-foreground dark:bg-dark-accent/35 dark:border-dark-border dark:text-dark-card-foreground"
+                            : "bg-card dark:bg-dark-background border-border dark:border-dark-border text-text-primary dark:text-dark-card-foreground",
+                        ].join(" ")}
+                      >
+                        {s.isDone ? <FaCheckCircle /> : <Icon />}
+                      </span>
+
+                      <div>
+                        <p className="text-xs font-semibold tracking-wide text-text-secondary dark:text-dark-muted-foreground">
+                          Step {s.number}
+                        </p>
+                        <p className="text-base font-semibold text-text-primary dark:text-dark-card-foreground">
+                          {s.title}
+                        </p>
+                      </div>
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        </div>
+
+        <div className="grid lg:grid-cols-3 lg:gap-12">
+          <div className="lg:col-span-2">
+            <AnimatePresence mode="wait" initial={false}>
+              {step === 1 && (
+                <motion.div
+                  key="step-1"
+                  {...panelMotion}
+                  className="bg-surface dark:bg-dark-card rounded-[28px] border border-border dark:border-dark-border shadow-soft p-6 sm:p-8"
+                >
+                  <h2 className="text-2xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
+                    Shipping Information
+                  </h2>
+                  <p className="mt-2 text-text-secondary dark:text-dark-muted-foreground">
+                    Where should we deliver your creation?
+                  </p>
+
+                  <div className="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <Input
+                      name="fullName"
+                      placeholder="Full Name"
+                      value={shippingAddress.fullName}
+                      onChange={handleShippingChange}
+                    />
+                    <Input
+                      name="phone"
+                      placeholder="Phone Number"
+                      value={shippingAddress.phone}
+                      onChange={handleShippingChange}
+                    />
+                    <div className="sm:col-span-2">
+                      <Input
+                        name="address"
+                        placeholder="Street Address"
+                        value={shippingAddress.address}
+                        onChange={handleShippingChange}
+                      />
+                    </div>
+                    <Input
+                      name="city"
+                      placeholder="City"
+                      value={shippingAddress.city}
+                      onChange={handleShippingChange}
+                    />
+                    <Input
+                      name="postalCode"
+                      placeholder="Postal Code"
+                      value={shippingAddress.postalCode}
+                      onChange={handleShippingChange}
+                    />
+                    <Input
+                      name="country"
+                      placeholder="Country"
+                      value={shippingAddress.country}
+                      onChange={handleShippingChange}
+                    />
+                  </div>
+
+                  <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                    <Link
+                      to="/cart"
+                      className="inline-flex justify-center rounded-xl border border-border dark:border-dark-border bg-card dark:bg-dark-background px-6 py-3 font-semibold text-text-primary dark:text-dark-card-foreground hover:bg-secondary/40 dark:hover:bg-dark-secondary/30 transition-colors"
+                    >
+                      Back to Cart
+                    </Link>
+
+                    <button
+                      type="button"
+                      onClick={handleShippingContinue}
+                      className="flex-1 bg-primary text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-hover shadow-soft transition-colors"
+                    >
+                      Continue to Payment
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 2 && (
+                <motion.div
+                  key="step-2"
+                  {...panelMotion}
+                  className="bg-surface dark:bg-dark-card rounded-[28px] border border-border dark:border-dark-border shadow-soft p-6 sm:p-8"
+                >
+                  <h2 className="text-2xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
+                    Payment Method
+                  </h2>
+                  <p className="mt-2 text-text-secondary dark:text-dark-muted-foreground">
+                    Choose the payment option you prefer.
+                  </p>
+
+                  <div className="mt-6 space-y-4">
+                    <PaymentOption
+                      value="Stripe"
+                      label="Pay with Card (Stripe)"
+                      description="Fast and secure card payment."
+                      icon={FaCreditCard}
+                    />
+                    <PaymentOption
+                      value="Cash on Delivery"
+                      label="Cash on Delivery"
+                      description="Pay in cash when your creation arrives."
+                      icon={FaMoneyBillWave}
+                    />
+                  </div>
+
+                  <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => goToStep(1)}
+                      className="inline-flex justify-center rounded-xl border border-border dark:border-dark-border bg-card dark:bg-dark-background px-6 py-3 font-semibold text-text-primary dark:text-dark-card-foreground hover:bg-secondary/40 dark:hover:bg-dark-secondary/30 transition-colors"
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      type="button"
+                      onClick={handlePaymentContinue}
+                      className="flex-1 bg-primary text-white font-semibold py-3 px-6 rounded-xl hover:bg-primary-hover shadow-soft transition-colors"
+                    >
+                      Continue to Review
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+
+              {step === 3 && (
+                <motion.div
+                  key="step-3"
+                  {...panelMotion}
+                  className="bg-surface dark:bg-dark-card rounded-[28px] border border-border dark:border-dark-border shadow-soft p-6 sm:p-8"
+                >
+                  <h2 className="text-2xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
+                    Review & Place Order
+                  </h2>
+                  <p className="mt-2 text-text-secondary dark:text-dark-muted-foreground">
+                    Confirm your details before placing your order.
+                  </p>
+
+                  <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                    <div className="rounded-2xl border border-border dark:border-dark-border bg-card dark:bg-dark-background p-5">
+                      <p className="text-sm font-semibold text-text-primary dark:text-dark-card-foreground">
+                        Shipping
+                      </p>
+                      <p className="mt-2 text-sm text-text-secondary dark:text-dark-muted-foreground leading-7">
+                        {shippingAddress.fullName}
+                        <br />
+                        {shippingAddress.phone}
+                        <br />
+                        {shippingAddress.address}, {shippingAddress.city}
+                        <br />
+                        {shippingAddress.postalCode}, {shippingAddress.country}
+                      </p>
+                    </div>
+
+                    <div className="rounded-2xl border border-border dark:border-dark-border bg-card dark:bg-dark-background p-5">
+                      <p className="text-sm font-semibold text-text-primary dark:text-dark-card-foreground">
+                        Payment
+                      </p>
+                      <p className="mt-2 text-sm text-text-secondary dark:text-dark-muted-foreground leading-7">
+                        {paymentMethod === "Stripe"
+                          ? "Card Payment (Stripe)"
+                          : "Cash on Delivery"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="mt-8 bg-card dark:bg-dark-background rounded-2xl border border-border dark:border-dark-border p-6">
+                    <h3 className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground mb-3">
+                      Discount Code
+                    </h3>
+
+                    {appliedCoupon ? (
+                      <div className="text-center">
+                        <p className="text-green-700 dark:text-emerald-400 font-semibold">
+                          Coupon '{appliedCoupon.code}' applied!
+                        </p>
+                        <button
+                          onClick={clearCoupon}
+                          className="mt-2 text-xs font-semibold text-destructive hover:underline"
+                          type="button"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="flex gap-2">
+                        <Input
+                          value={couponCode}
+                          onChange={(e) =>
+                            setCouponCode(e.target.value.toUpperCase())
+                          }
+                          placeholder="Enter code"
+                          className="text-sm"
+                        />
+                        <button
+                          onClick={handleApplyCoupon}
+                          className="bg-primary text-white font-semibold px-5 rounded-xl text-sm hover:bg-primary-hover transition-colors"
+                          type="button"
+                        >
+                          Apply
+                        </button>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-8 flex flex-col sm:flex-row gap-3">
+                    <button
+                      type="button"
+                      onClick={() => goToStep(2)}
+                      className="inline-flex justify-center rounded-xl border border-border dark:border-dark-border bg-card dark:bg-dark-background px-6 py-3 font-semibold text-text-primary dark:text-dark-card-foreground hover:bg-secondary/40 dark:hover:bg-dark-secondary/30 transition-colors"
+                    >
+                      Back
+                    </button>
+
+                    <button
+                      onClick={placeOrder}
+                      disabled={processing}
+                      className={[
+                        "flex-1 flex items-center justify-center gap-3 font-semibold py-4 rounded-xl shadow-soft transition-all",
+                        processing
+                          ? "bg-secondary text-text-secondary border border-border cursor-not-allowed dark:bg-dark-secondary/30 dark:text-dark-muted-foreground dark:border-dark-border"
+                          : "bg-primary text-white hover:bg-primary-hover",
+                      ].join(" ")}
+                      type="button"
+                    >
+                      <FaLock />
+                      {processing
+                        ? "Processing..."
+                        : paymentMethod === "Stripe"
+                        ? "Continue to Payment"
+                        : "Place Order"}
+                    </button>
+                  </div>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
+
+          <div className="lg:col-span-1 mt-8 lg:mt-0">
+            <OrderSummary />
+          </div>
+        </div>
+      </div>
+    </div>
+  );
 };
 
 export default Checkout;

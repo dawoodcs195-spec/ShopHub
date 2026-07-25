@@ -23,6 +23,7 @@ const MyOrders = lazy(() => import("./pages/MyOrders/MyOrders"));
 const ProductDetails = lazy(() => import("./pages/ProductDetails/ProductDetails"));
 const Profile = lazy(() => import("./pages/Profile/Profile"));
 const Wishlist = lazy(() => import("./pages/Wishlist/Wishlist"));
+const OrderSuccess = lazy(() => import("./pages/OrderSuccess/OrderSuccess"));
 
 // Lazy-loaded Admin page components
 const Admin = lazy(() => import("./pages/Admin/Admin"));
@@ -69,86 +70,35 @@ function App() {
               {/* ================= Protected User Routes ================= */}
               <Route
                 path="/checkout"
-                element={
-                  <ProtectedRoute>
-                    <Checkout />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute><Checkout /></ProtectedRoute>}
               />
               <Route
                 path="/stripe-payment"
-                element={
-                  <ProtectedRoute>
-                    <StripePayment />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute><StripePayment /></ProtectedRoute>}
+              />
+              <Route
+                path="/order-success"
+                element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>}
               />
               <Route
                 path="/my-orders"
-                element={
-                  <ProtectedRoute>
-                    <MyOrders />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute><MyOrders /></ProtectedRoute>}
               />
               <Route
                 path="/wishlist"
-                element={
-                  <ProtectedRoute>
-                    <Wishlist />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute><Wishlist /></ProtectedRoute>}
               />
               <Route
                 path="/profile"
-                element={
-                  <ProtectedRoute>
-                    <Profile />
-                  </ProtectedRoute>
-                }
+                element={<ProtectedRoute><Profile /></ProtectedRoute>}
               />
 
               {/* ================= Admin Routes ================= */}
-              <Route
-                path="/admin"
-                element={
-                  <AdminRoute>
-                    <Admin />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/products"
-                element={
-                  <AdminRoute>
-                    <AdminProducts />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/orders"
-                element={
-                  <AdminRoute>
-                    <AdminOrders />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/coupons"
-                element={
-                  <AdminRoute>
-                    <AdminCoupons />
-                  </AdminRoute>
-                }
-              />
-              <Route
-                path="/admin/reports"
-                element={
-                  <AdminRoute>
-                    <AdminReports />
-                  </AdminRoute>
-                }
-              />
+              <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+              <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+              <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+              <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+              <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
             </Routes>
           ) : (
             <AnimatePresence mode="wait" initial={false}>
@@ -172,86 +122,35 @@ function App() {
                   {/* ================= Protected User Routes ================= */}
                   <Route
                     path="/checkout"
-                    element={
-                      <ProtectedRoute>
-                        <Checkout />
-                      </ProtectedRoute>
-                    }
+                    element={<ProtectedRoute><Checkout /></ProtectedRoute>}
                   />
                   <Route
                     path="/stripe-payment"
-                    element={
-                      <ProtectedRoute>
-                        <StripePayment />
-                      </ProtectedRoute>
-                    }
+                    element={<ProtectedRoute><StripePayment /></ProtectedRoute>}
+                  />
+                  <Route
+                    path="/order-success"
+                    element={<ProtectedRoute><OrderSuccess /></ProtectedRoute>}
                   />
                   <Route
                     path="/my-orders"
-                    element={
-                      <ProtectedRoute>
-                        <MyOrders />
-                      </ProtectedRoute>
-                    }
+                    element={<ProtectedRoute><MyOrders /></ProtectedRoute>}
                   />
                   <Route
                     path="/wishlist"
-                    element={
-                      <ProtectedRoute>
-                        <Wishlist />
-                      </ProtectedRoute>
-                    }
+                    element={<ProtectedRoute><Wishlist /></ProtectedRoute>}
                   />
                   <Route
                     path="/profile"
-                    element={
-                      <ProtectedRoute>
-                        <Profile />
-                      </ProtectedRoute>
-                    }
+                    element={<ProtectedRoute><Profile /></ProtectedRoute>}
                   />
 
                   {/* ================= Admin Routes ================= */}
-                  <Route
-                    path="/admin"
-                    element={
-                      <AdminRoute>
-                        <Admin />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/products"
-                    element={
-                      <AdminRoute>
-                        <AdminProducts />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/orders"
-                    element={
-                      <AdminRoute>
-                        <AdminOrders />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/coupons"
-                    element={
-                      <AdminRoute>
-                        <AdminCoupons />
-                      </AdminRoute>
-                    }
-                  />
-                  <Route
-                    path="/admin/reports"
-                    element={
-                      <AdminRoute>
-                        <AdminReports />
-                      </AdminRoute>
-                    }
-                  />
+                  <Route path="/admin" element={<AdminRoute><Admin /></AdminRoute>} />
+                  <Route path="/admin/products" element={<AdminRoute><AdminProducts /></AdminRoute>} />
+                  <Route path="/admin/orders" element={<AdminRoute><AdminOrders /></AdminRoute>} />
+                  <Route path="/admin/coupons" element={<AdminRoute><AdminCoupons /></AdminRoute>} />
+                  <Route path="/admin/reports" element={<AdminRoute><AdminReports /></AdminRoute>} />
                 </Routes>
               </motion.div>
             </AnimatePresence>

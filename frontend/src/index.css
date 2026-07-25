@@ -4,14 +4,33 @@
 @import "tailwindcss";
 
 @layer base {
+  :root {
+    --sh-text-primary: #2b2a28;
+    --sh-text-secondary: #7a6e67;
+    --sh-text-muted: #9a8f89;
+  }
+
+  /* When html has class="dark" */
+  .dark {
+    --sh-text-primary: #f4eee9;
+    --sh-text-secondary: #cfc2bb;
+    --sh-text-muted: #b7aaa3;
+  }
+
   html {
     text-rendering: geometricPrecision;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+
+    @apply bg-background;
   }
 
   body {
-    @apply bg-background text-ink font-sans antialiased;
+    @apply bg-background text-ink font-sans antialiased transition-colors duration-400 ease-premium;
+  }
+
+  .dark html {
+    @apply bg-dark-background;
   }
 
   .dark body {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React from "react";
 
 const filterOptions = [
     { label: "Today", value: "today" },
@@ -11,22 +11,32 @@ const filterOptions = [
 
 const DashboardFilters = ({ onFilterChange, activeFilter }) => {
     return (
-        <div className="mb-8 bg-white p-4 rounded-lg shadow-sm">
+        <div className="mb-8 bg-secondary dark:bg-dark-secondary border border-black/5 dark:border-white/10 p-4 rounded-xl shadow-soft">
             <div className="flex flex-wrap items-center gap-2">
-                <span className="text-sm font-semibold text-gray-600 mr-2">Filter by period:</span>
-                {filterOptions.map((option) => (
-                    <button
-                        key={option.value}
-                        onClick={() => onFilterChange(option.value)}
-                        className={`px-4 py-2 text-sm font-medium rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 ${
-                            activeFilter === option.value
-                                ? "bg-blue-600 text-white shadow-md"
-                                : "bg-gray-200 text-gray-800 hover:bg-gray-300"
-                        }`}
-                    >
-                        {option.label}
-                    </button>
-                ))}
+                <span className="text-sm font-semibold text-muted-foreground dark:text-dark-muted-foreground mr-2">
+                    Filter by period:
+                </span>
+
+                {filterOptions.map((option) => {
+                    const isActive = activeFilter === option.value;
+
+                    return (
+                        <button
+                            key={option.value}
+                            onClick={() => onFilterChange(option.value)}
+                            className={[
+                                "px-4 py-2 text-sm font-semibold rounded-full",
+                                "transition-all duration-200",
+                                "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                                isActive
+                                    ? "bg-primary text-white shadow-sm"
+                                    : "bg-black/5 text-card-foreground hover:bg-black/10 dark:bg-white/10 dark:hover:bg-white/15 dark:text-dark-card-foreground",
+                            ].join(" ")}
+                        >
+                            {option.label}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );

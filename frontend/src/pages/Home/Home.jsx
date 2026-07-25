@@ -92,15 +92,16 @@ const Home = () => {
     const homePage = !keyword && !category;
 
     return (
-        <div className="min-h-screen bg-[#FCFAF7]">
+        <div className="min-h-screen bg-background dark:bg-dark-background">
             {homePage && <Hero />}
 
             {homePage && <Categories />}
 
             <section className="relative py-24">
+                {/* Soft glow background (token-based in dark mode) */}
                 <div className="pointer-events-none absolute inset-0">
-                    <div className="absolute left-0 top-32 h-80 w-80 rounded-full bg-rose-100/30 blur-3xl" />
-                    <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-amber-100/30 blur-3xl" />
+                    <div className="absolute left-0 top-32 h-80 w-80 rounded-full bg-rose-100/30 blur-3xl dark:bg-dark-accent/35" />
+                    <div className="absolute bottom-0 right-0 h-96 w-96 rounded-full bg-amber-100/30 blur-3xl dark:bg-dark-secondary/35" />
                 </div>
 
                 <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
@@ -112,7 +113,7 @@ const Home = () => {
                         />
                     ) : (
                         <div className="mb-12 text-center">
-                            <h2 className="font-serif text-4xl font-bold text-[#2D2A26]">
+                            <h2 className="font-serif text-4xl font-bold text-text-primary dark:text-dark-card-foreground">
                                 {keyword
                                     ? `Search Results for "${keyword}"`
                                     : `${category} Creations`}
@@ -125,7 +126,7 @@ const Home = () => {
                     <ProductFilters />
 
                     {!loading && products.length > 0 && (
-                        <div className="mb-10 mt-10 flex flex-wrap items-center justify-between gap-3 text-sm text-[#7A7067]">
+                        <div className="mb-10 mt-10 flex flex-wrap items-center justify-between gap-3 text-sm text-text-secondary dark:text-dark-muted-foreground">
                             <span>
                                 Showing {products.length} of{" "}
                                 {pagination.totalProducts} handcrafted creations
@@ -143,12 +144,12 @@ const Home = () => {
                             {renderSkeletons()}
                         </div>
                     ) : products.length === 0 ? (
-                        <div className="rounded-[32px] border border-[#EFE6DC] bg-white py-24 text-center shadow-sm">
-                            <h3 className="font-serif text-4xl font-bold text-[#2D2A26]">
+                        <div className="rounded-[32px] border border-border dark:border-dark-border bg-card dark:bg-dark-card py-24 text-center shadow-soft">
+                            <h3 className="font-serif text-4xl font-bold text-text-primary dark:text-dark-card-foreground">
                                 No Creations Found
                             </h3>
 
-                            <p className="mt-4 text-[#6B655F]">
+                            <p className="mt-4 text-text-secondary dark:text-dark-muted-foreground">
                                 Try adjusting your search or filters.
                             </p>
                         </div>
@@ -185,7 +186,8 @@ const Home = () => {
                 </div>
             </section>
 
-            {/* These sections contain their own premium Reveal + motion internally */}
+            {/* These sections contain their own premium Reveal + motion internally.
+                We'll convert each component to token-based dark mode next. */}
             {homePage && <MeetArtist />}
             {homePage && <CustomOrders />}
             {homePage && <Features />}

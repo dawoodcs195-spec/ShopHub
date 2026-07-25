@@ -1,7 +1,6 @@
 import { motion } from "framer-motion";
 import { FaQuoteLeft, FaStar } from "react-icons/fa";
 
-import SectionHeading from "./SectionHeading";
 import Reveal from "./Reveal";
 
 const testimonials = [
@@ -30,10 +29,7 @@ const testimonials = [
 
 const containerVariants = {
     hidden: { opacity: 0 },
-    visible: {
-        opacity: 1,
-        transition: { staggerChildren: 0.12 },
-    },
+    visible: { opacity: 1, transition: { staggerChildren: 0.12 } },
 };
 
 const cardVariants = {
@@ -47,20 +43,29 @@ const cardVariants = {
 
 const Testimonials = () => {
     return (
-        <section className="relative overflow-hidden bg-[#FFFDFB] py-28">
-            {/* Warm glow */}
+        <section className="relative overflow-hidden bg-background dark:bg-dark-background py-28">
             <div className="pointer-events-none absolute inset-0">
-                <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-rose-100/40 blur-3xl" />
-                <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-amber-100/30 blur-3xl" />
+                <div className="absolute -left-24 top-10 h-80 w-80 rounded-full bg-rose-100/40 dark:bg-dark-accent/45 blur-3xl" />
+                <div className="absolute right-0 bottom-0 h-96 w-96 rounded-full bg-amber-100/30 dark:bg-dark-secondary/45 blur-3xl" />
             </div>
 
             <div className="relative mx-auto max-w-7xl px-6 lg:px-8">
+                {/* ✅ Custom heading so title is readable in dark mode */}
                 <Reveal y={20} duration={0.85}>
-                    <SectionHeading
-                        badge="Testimonials"
-                        title="Loved by Customers, Cherished as Gifts"
-                        subtitle="Kind words mean the world to us — every review is a reminder that handmade still matters."
-                    />
+                    <div className="mx-auto max-w-3xl text-center">
+                        <span className="inline-flex items-center justify-center rounded-full bg-accent text-accent-foreground dark:bg-dark-accent dark:text-dark-accent-foreground px-5 py-2 text-sm font-semibold tracking-wide">
+                            Testimonials
+                        </span>
+
+                        <h2 className="mt-6 font-serif text-4xl sm:text-5xl font-bold tracking-tight text-text-primary dark:text-dark-card-foreground">
+                            Loved by Customers, Cherished as Gifts
+                        </h2>
+
+                        <p className="mt-5 text-lg leading-8 text-text-secondary dark:text-dark-muted-foreground">
+                            Kind words mean the world to us — every review is a
+                            reminder that handmade still matters.
+                        </p>
+                    </div>
                 </Reveal>
 
                 <Reveal variants={containerVariants} className="mt-16">
@@ -73,16 +78,18 @@ const Testimonials = () => {
                                 key={t.name}
                                 variants={cardVariants}
                                 whileHover={{ y: -6 }}
-                                transition={{ duration: 0.35, ease: [0.22, 1, 0.36, 1] }}
-                                className="relative overflow-hidden rounded-[30px] border border-[#EFE6DC] bg-white p-8 shadow-sm hover:shadow-2xl transition-shadow duration-500"
+                                transition={{
+                                    duration: 0.35,
+                                    ease: [0.22, 1, 0.36, 1],
+                                }}
+                                className="relative overflow-hidden rounded-[30px] border border-border dark:border-dark-border bg-card dark:bg-dark-card p-8 shadow-soft hover:shadow-2xl transition-shadow duration-500"
                             >
-                                {/* subtle corner glow */}
-                                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-rose-100/70 to-amber-100/60 blur-2xl opacity-70" />
+                                <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-gradient-to-br from-rose-100/60 to-amber-100/50 dark:from-dark-accent/55 dark:to-dark-secondary/55 blur-2xl opacity-70" />
 
                                 <div className="relative">
                                     <div className="flex items-start justify-between gap-6">
                                         <div>
-                                            <p className="font-serif text-2xl font-semibold text-[#2D2A26]">
+                                            <p className="font-serif text-2xl font-semibold text-text-primary dark:text-dark-card-foreground">
                                                 {t.name}
                                             </p>
                                             <p className="mt-1 text-sm font-medium tracking-wide text-[#B76E79]">
@@ -99,14 +106,14 @@ const Testimonials = () => {
 
                                     <div className="mt-6 flex gap-4">
                                         <FaQuoteLeft className="mt-1 text-[#B76E79]/70" />
-                                        <p className="text-lg leading-9 text-[#5F5751]">
+                                        <p className="text-lg leading-9 text-text-secondary dark:text-dark-muted-foreground">
                                             {t.quote}
                                         </p>
                                     </div>
 
-                                    <div className="mt-8 h-px w-full bg-[#EFE6DC]" />
+                                    <div className="mt-8 h-px w-full bg-border/70 dark:bg-dark-border" />
 
-                                    <p className="mt-4 text-sm text-[#6B655F]">
+                                    <p className="mt-4 text-sm text-text-secondary dark:text-dark-muted-foreground">
                                         Verified customer feedback • Handmade experience
                                     </p>
                                 </div>

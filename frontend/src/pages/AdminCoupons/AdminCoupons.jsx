@@ -33,7 +33,7 @@ const AdminCoupons = () => {
     }, [fetchCoupons, refreshKey]);
 
     const handleRefresh = () => {
-        setRefreshKey(prev => prev + 1);
+        setRefreshKey((prev) => prev + 1);
     };
 
     const handleOpenCreateModal = () => {
@@ -52,16 +52,34 @@ const AdminCoupons = () => {
     };
 
     return (
-        <div className="bg-background min-h-screen">
+        // IMPORTANT: don't force a light background here; let the global theme/background handle it
+        <div className="min-h-screen">
             <div className="max-w-7xl mx-auto p-4 sm:p-6 lg:p-8">
                 <header className="flex flex-col sm:flex-row justify-between sm:items-center mb-8 gap-4">
                     <div>
-                        <h1 className="text-3xl font-serif font-bold text-text-primary">Coupon Management</h1>
-                        <p className="text-text-secondary mt-1">Create and manage discount codes for your store.</p>
+                        <h1 className="text-3xl font-serif font-bold text-card-foreground dark:text-dark-card-foreground">
+                            Coupon Management
+                        </h1>
+                        <p className="text-muted-foreground dark:text-dark-muted-foreground mt-1">
+                            Create and manage discount codes for your store.
+                        </p>
                     </div>
+
                     <button
                         onClick={handleOpenCreateModal}
-                        className="flex items-center justify-center gap-2 bg-primary text-white font-semibold px-5 py-2.5 rounded-lg hover:bg-primary-hover shadow-soft transition-all"
+                        className={[
+                            "inline-flex items-center justify-center gap-2",
+                            "px-5 py-2.5 rounded-xl",
+                            "text-sm font-semibold text-white",
+                            "shadow-sm hover:shadow-md",
+                            "border border-white/10",
+                            "transition-all duration-200 ease-in-out",
+                            "transform hover:-translate-y-0.5 active:translate-y-0",
+                            "focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40",
+                            "relative overflow-hidden",
+                            "before:content-[''] before:absolute before:inset-0 before:bg-white/10 before:opacity-0 hover:before:opacity-100 before:transition-opacity",
+                            "bg-gradient-to-r from-primary to-primary hover:brightness-110",
+                        ].join(" ")}
                     >
                         <FaPlus size={14} />
                         <span>Create Coupon</span>
