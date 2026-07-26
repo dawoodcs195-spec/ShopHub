@@ -1,5 +1,6 @@
-@'
+$vercel = @'
 {
   "rewrites": [{ "source": "/(.*)", "destination": "/" }]
 }
-'@ | Set-Content -Encoding UTF8 .\frontend\vercel.json
+'@
+Set-Content -Path .\frontend\vercel.json -Value $vercel -Encoding UTF8
