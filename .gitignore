@@ -3,3 +3,12 @@
 .env
 backend/.env
 frontend/.env
+
+# dependencies
+node_modules/
+**/node_modules/
+
+# builds
+frontend/dist/
+**/dist/
+**/dist-ssr/
