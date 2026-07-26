@@ -8,19 +8,20 @@ export const ThemeProvider = ({ children }) => {
   const [theme, setTheme] = useState(() => {
     const savedTheme = localStorage.getItem("theme");
 
-    const userPrefersDark =
-      typeof window !== "undefined" &&
-      window.matchMedia &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches;
+    // Only respect explicit saved values
+    if (savedTheme === "dark" || savedTheme === "light") {
+      return savedTheme;
+    }
 
-    return savedTheme || (userPrefersDark ? "dark" : "light");
+    // ✅ Default theme for new visitors
+    return "light";
   });
 
   useEffect(() => {
     const root = window.document.documentElement;
-    const oldTheme = theme === "dark" ? "light" : "dark";
 
-    root.classList.remove(oldTheme);
+    // Ensure we never leave both classes behind
+    root.classList.remove("light", "dark");
     root.classList.add(theme);
 
     // Helps browser render built-in UI (inputs/scrollbars) correctly

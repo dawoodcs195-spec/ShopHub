@@ -16,6 +16,7 @@ import { useAuth } from "../../context/AuthContext";
 import { createOrder } from "../../services/orderService";
 import { validateCoupon } from "../../services/couponService";
 import Input from "../../components/forms/Input";
+import LoadingOverlay from "../../components/common/LoadingOverlay";
 
 const Checkout = () => {
   const navigate = useNavigate();
@@ -62,6 +63,16 @@ const Checkout = () => {
   const shippingPrice = itemsPrice > 0 ? 250 : 0;
   const taxPrice = 0;
   const totalPrice = Math.max(itemsPrice + shippingPrice + taxPrice - discount, 0);
+
+  const totalItemsCount = useMemo(
+    () => cartItems.reduce((sum, item) => sum + item.quantity, 0),
+    [cartItems]
+  );
+
+  const overlayLabel =
+    paymentMethod === "Stripe"
+      ? "Redirecting to secure payment..."
+      : "Placing your handmade order...";
 
   const steps = useMemo(
     () => [
@@ -185,7 +196,6 @@ const Checkout = () => {
         return;
       }
 
-      // Cash on Delivery
       const created = await createOrder(orderData, token);
       clearCart();
 
@@ -209,6 +219,8 @@ const Checkout = () => {
   if (cartItems.length === 0 && !processing) {
     return (
       <div className="bg-background dark:bg-dark-background min-h-screen flex items-center justify-center px-4">
+        <LoadingOverlay isOpen={processing} label={overlayLabel} />
+
         <div className="text-center py-20 bg-surface dark:bg-dark-card rounded-[28px] border border-border dark:border-dark-border shadow-soft max-w-2xl mx-auto w-full">
           <FaShoppingBag className="mx-auto text-5xl text-text-secondary dark:text-dark-muted-foreground mb-6" />
           <h1 className="text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground mb-4">
@@ -336,6 +348,100 @@ const Checkout = () => {
     </div>
   );
 
+  const MobileOrderSummary = () => (
+    <div className="lg:hidden mb-8">
+      <details className="group rounded-[28px] border border-border dark:border-dark-border bg-surface dark:bg-dark-card shadow-soft overflow-hidden">
+        <summary className="list-none cursor-pointer select-none p-5 sm:p-6">
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <p className="text-sm text-text-secondary dark:text-dark-muted-foreground">
+                Order Summary
+              </p>
+              <p className="mt-1 text-lg font-bold text-text-primary dark:text-dark-card-foreground">
+                Rs. {totalPrice.toLocaleString()}
+              </p>
+              <p className="mt-1 text-xs text-text-secondary dark:text-dark-muted-foreground">
+                {totalItemsCount} item{totalItemsCount !== 1 ? "s" : ""} • Shipping Rs.{" "}
+                {shippingPrice.toLocaleString()}
+              </p>
+            </div>
+
+            <div className="text-sm font-semibold text-primary">
+              <span className="group-open:hidden">View</span>
+              <span className="hidden group-open:inline">Hide</span>
+            </div>
+          </div>
+        </summary>
+
+        <div className="border-t border-border dark:border-dark-border p-5 sm:p-6">
+          <OrderSummaryMobileBody />
+        </div>
+      </details>
+    </div>
+  );
+
+  const OrderSummaryMobileBody = () => (
+    <div className="space-y-5">
+      <div className="space-y-3 max-h-56 overflow-y-auto pr-1">
+        {cartItems.map((item) => (
+          <div key={item._id} className="flex items-center justify-between gap-4 text-sm">
+            <div className="flex items-center gap-3 min-w-0">
+              <img
+                src={item.image?.url}
+                alt={item.name}
+                className="w-11 h-11 rounded-lg object-cover border border-border dark:border-dark-border"
+              />
+              <div className="min-w-0">
+                <p className="font-semibold text-text-primary dark:text-dark-card-foreground truncate">
+                  {item.name}
+                </p>
+                <p className="text-xs text-text-secondary dark:text-dark-muted-foreground">
+                  Qty: {item.quantity}
+                </p>
+              </div>
+            </div>
+
+            <p className="font-semibold text-text-primary dark:text-dark-card-foreground whitespace-nowrap">
+              Rs. {(item.price * item.quantity).toLocaleString()}
+            </p>
+          </div>
+        ))}
+      </div>
+
+      <div className="border-t border-border dark:border-dark-border pt-4 space-y-2 text-sm text-text-secondary dark:text-dark-muted-foreground">
+        <div className="flex justify-between">
+          <span>Subtotal</span>
+          <span className="text-text-primary dark:text-dark-card-foreground">
+            Rs. {itemsPrice.toLocaleString()}
+          </span>
+        </div>
+
+        <div className="flex justify-between">
+          <span>Shipping</span>
+          <span className="text-text-primary dark:text-dark-card-foreground">
+            Rs. {shippingPrice.toLocaleString()}
+          </span>
+        </div>
+
+        {discount > 0 && (
+          <div className="flex justify-between text-green-700 dark:text-emerald-400 font-semibold">
+            <span>Discount ({appliedCoupon?.code})</span>
+            <span>- Rs. {discount.toLocaleString()}</span>
+          </div>
+        )}
+
+        <div className="flex justify-between font-bold text-text-primary dark:text-dark-card-foreground text-base pt-3 border-t border-border dark:border-dark-border mt-2">
+          <span>Total</span>
+          <span className="text-primary">Rs. {totalPrice.toLocaleString()}</span>
+        </div>
+      </div>
+
+      <p className="text-xs text-text-secondary dark:text-dark-muted-foreground text-center">
+        Secure checkout • Carefully packed • Handmade with love
+      </p>
+    </div>
+  );
+
   const panelMotion = {
     initial: { opacity: 0, y: 10 },
     animate: { opacity: 1, y: 0 },
@@ -345,7 +451,9 @@ const Checkout = () => {
 
   return (
     <div className="bg-background dark:bg-dark-background min-h-screen">
-      <div className="max-w-7xl mx-auto py-12 px-4 sm:px-6 lg:px-8">
+      <LoadingOverlay isOpen={processing} label={overlayLabel} />
+
+      <div className="max-w-7xl mx-auto py-10 sm:py-12 px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-10">
           <h1 className="text-4xl font-serif font-bold text-text-primary dark:text-dark-card-foreground">
             Checkout
@@ -355,10 +463,11 @@ const Checkout = () => {
           </p>
         </div>
 
-        {/* Stepper with progress line */}
-        <div className="mb-10">
+        {/* Stepper */}
+        <div className="mb-8 sm:mb-10">
           <div className="rounded-[28px] border border-border dark:border-dark-border bg-surface dark:bg-dark-card shadow-soft p-5 sm:p-6">
-            <div className="relative px-3 sm:px-6">
+            {/* Desktop progress line */}
+            <div className="relative px-3 sm:px-6 hidden sm:block">
               <div className="absolute left-6 right-6 top-6 h-[2px] rounded-full bg-border/70 dark:bg-dark-border/70" />
               <motion.div
                 className="absolute left-6 right-6 top-6 h-[2px] rounded-full bg-primary"
@@ -369,7 +478,22 @@ const Checkout = () => {
               />
             </div>
 
-            <div className="mt-2 flex items-center justify-between gap-4">
+            {/* Mobile progress bar */}
+            <div className="sm:hidden">
+              <p className="text-xs font-semibold tracking-wide text-text-secondary dark:text-dark-muted-foreground mb-2">
+                Step {step} of 3
+              </p>
+              <div className="h-2 rounded-full bg-border/70 dark:bg-dark-border/70 overflow-hidden">
+                <motion.div
+                  className="h-full bg-primary"
+                  initial={false}
+                  animate={{ width: `${currentStepProgress}%` }}
+                  transition={{ duration: 0.45, ease: [0.22, 1, 0.36, 1] }}
+                />
+              </div>
+            </div>
+
+            <div className="mt-4 sm:mt-2 grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
               {steps.map((s) => {
                 const Icon = s.icon;
                 const isActive = step === s.number;
@@ -381,7 +505,7 @@ const Checkout = () => {
                     type="button"
                     onClick={() => clickable && goToStep(s.number)}
                     className={[
-                      "flex-1 text-left rounded-2xl px-4 py-3 transition-colors",
+                      "text-left rounded-2xl px-4 py-3 transition-colors",
                       clickable
                         ? "hover:bg-secondary/40 dark:hover:bg-dark-secondary/30"
                         : "cursor-not-allowed opacity-60",
@@ -419,8 +543,11 @@ const Checkout = () => {
           </div>
         </div>
 
-        <div className="grid lg:grid-cols-3 lg:gap-12">
+        <div className="grid lg:grid-cols-3 gap-8 lg:gap-12">
           <div className="lg:col-span-2">
+            {/* Mobile summary appears before panels */}
+            <MobileOrderSummary />
+
             <AnimatePresence mode="wait" initial={false}>
               {step === 1 && (
                 <motion.div
@@ -603,7 +730,7 @@ const Checkout = () => {
                         </button>
                       </div>
                     ) : (
-                      <div className="flex gap-2">
+                      <div className="flex flex-col sm:flex-row gap-2">
                         <Input
                           value={couponCode}
                           onChange={(e) =>
@@ -614,7 +741,7 @@ const Checkout = () => {
                         />
                         <button
                           onClick={handleApplyCoupon}
-                          className="bg-primary text-white font-semibold px-5 rounded-xl text-sm hover:bg-primary-hover transition-colors"
+                          className="bg-primary text-white font-semibold px-5 py-3 sm:py-0 rounded-xl text-sm hover:bg-primary-hover transition-colors"
                           type="button"
                         >
                           Apply
@@ -656,7 +783,8 @@ const Checkout = () => {
             </AnimatePresence>
           </div>
 
-          <div className="lg:col-span-1 mt-8 lg:mt-0">
+          {/* Desktop summary only */}
+          <div className="hidden lg:block lg:col-span-1">
             <OrderSummary />
           </div>
         </div>

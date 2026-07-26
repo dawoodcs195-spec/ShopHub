@@ -35,10 +35,7 @@ const Register = () => {
       toast.success("Registration successful! Please log in.");
       navigate("/login");
     } catch (err) {
-      toast.error(
-        err.response?.data?.message ||
-          "Registration failed. Please try again."
-      );
+      toast.error(err.response?.data?.message || "Registration failed. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -49,12 +46,12 @@ const Register = () => {
       <div className="max-w-4xl w-full grid lg:grid-cols-2 shadow-soft-lg rounded-xl overflow-hidden border border-border dark:border-dark-border bg-card dark:bg-dark-card">
         {/* Form Panel */}
         <motion.div
-          className="bg-surface dark:bg-dark-card p-8 sm:p-12"
+          className="bg-surface dark:bg-dark-card p-6 sm:p-10 lg:p-12"
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
         >
-          <h1 className="text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground text-center mb-8">
             Create Your Account
           </h1>
 
@@ -83,7 +80,6 @@ const Register = () => {
               onChange={handleChange}
               required
             />
-
             <Input
               type="password"
               name="confirmPassword"
@@ -112,7 +108,7 @@ const Register = () => {
 
         {/* Decorative Panel */}
         <motion.div
-          className="hidden lg:flex flex-col items-center justify-center bg-primary/20 dark:bg-dark-accent/20 p-12 text-center"
+          className="hidden lg:flex flex-col items-center justify-center bg-primary/20 dark:bg-dark-accent/20 p-10 lg:p-12 text-center"
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ duration: 0.7, ease: "easeOut" }}
@@ -121,8 +117,8 @@ const Register = () => {
             Join Our Community
           </h2>
           <p className="text-text-secondary dark:text-dark-muted-foreground">
-            Become a part of our creative world and start your collection of
-            beautiful, handcrafted art.
+            Become a part of our creative world and start your collection of beautiful,
+            handcrafted art.
           </p>
         </motion.div>
       </div>

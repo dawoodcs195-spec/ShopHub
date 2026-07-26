@@ -14,6 +14,8 @@ import {
     FaHome,
     FaMoon,
     FaSun,
+    FaEnvelopeOpenText,
+    FaClipboardList,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -34,6 +36,9 @@ const PopularSearches =
     PopularSearchesModule.default || PopularSearchesModule.PopularSearches;
 
 const RECENT_SEARCHES_KEY = "recentSearches";
+
+const BRAND_NAME = "Diya Expressions";
+const BRAND_LOGO_SRC = "/favicon.svg"; // place at: frontend/public/favicon.svg
 
 const Navbar = () => {
     const navigate = useNavigate();
@@ -75,12 +80,47 @@ const Navbar = () => {
     const searchRequestIdRef = useRef(0);
     const skipDebouncedFetchRef = useRef("");
 
+    // ✅ Logo preview modal (works desktop + mobile)
+    const [isLogoPreviewOpen, setIsLogoPreviewOpen] = useState(false);
+
     const totalCartItems = cartItems.reduce(
         (total, item) => total + item.quantity,
         0
     );
 
     const closeUserMenu = useCallback(() => setIsUserMenuOpen(false), []);
+
+    const closeMobileMenu = useCallback(() => setMenuOpen(false), []);
+
+    const openLogoPreview = useCallback(() => {
+        setIsLogoPreviewOpen(true);
+        closeUserMenu();
+        setMenuOpen(false);
+        setIsSearchOpen(false);
+    }, [closeUserMenu]);
+
+    const closeLogoPreview = useCallback(() => {
+        setIsLogoPreviewOpen(false);
+    }, []);
+
+    // ESC + scroll lock for logo preview modal
+    useEffect(() => {
+        if (!isLogoPreviewOpen) return;
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") closeLogoPreview();
+        };
+
+        document.addEventListener("keydown", onKeyDown);
+
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+            document.body.style.overflow = prevOverflow;
+        };
+    }, [isLogoPreviewOpen, closeLogoPreview]);
 
     const addRecentSearch = useCallback((value) => {
         const term = String(value || "").trim();
@@ -308,15 +348,39 @@ const Navbar = () => {
         };
     }, [isUserMenuOpen, closeUserMenu]);
 
-    const menuVariants = {
+    // Mobile menu: ESC closes + lock body scroll
+    useEffect(() => {
+        if (!isMenuOpen) return;
+
+        const onKeyDown = (e) => {
+            if (e.key === "Escape") closeMobileMenu();
+        };
+
+        document.addEventListener("keydown", onKeyDown);
+
+        const prevOverflow = document.body.style.overflow;
+        document.body.style.overflow = "hidden";
+
+        return () => {
+            document.removeEventListener("keydown", onKeyDown);
+            document.body.style.overflow = prevOverflow;
+        };
+    }, [isMenuOpen, closeMobileMenu]);
+
+    const drawerVariants = {
         open: {
             x: 0,
-            transition: { type: "spring", stiffness: 300, damping: 30 },
+            transition: { type: "spring", stiffness: 320, damping: 34 },
         },
         closed: {
             x: "100%",
-            transition: { type: "spring", stiffness: 300, damping: 30 },
+            transition: { type: "spring", stiffness: 320, damping: 34 },
         },
+    };
+
+    const overlayVariants = {
+        open: { opacity: 1, transition: { duration: 0.2 } },
+        closed: { opacity: 0, transition: { duration: 0.2 } },
     };
 
     const NavItem = ({ to, children, icon: Icon }) => (
@@ -327,14 +391,14 @@ const Navbar = () => {
                 closeUserMenu();
             }}
             className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium transition-colors duration-200 ${
+                `flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-semibold transition-colors duration-200 ${
                     isActive
-                        ? "bg-primary dark:bg-dark-primary text-primary-foreground dark:text-dark-primary-foreground"
-                        : "text-muted-foreground dark:text-dark-muted-foreground hover:bg-card dark:hover:bg-dark-card hover:text-card-foreground dark:hover:text-dark-card-foreground"
+                        ? "bg-primary/12 text-primary dark:bg-dark-accent/30 dark:text-dark-card-foreground"
+                        : "text-text-primary dark:text-dark-card-foreground hover:bg-secondary/50 dark:hover:bg-dark-secondary/30"
                 }`
             }
         >
-            <Icon className="w-5 h-5" />
+            <Icon className="w-5 h-5 opacity-90" />
             <span>{children}</span>
         </NavLink>
     );
@@ -358,13 +422,33 @@ const Navbar = () => {
                     <div className="flex items-center justify-between h-20">
                         {/* Logo */}
                         <div className="flex-shrink-0">
-                            <Link
-                                to="/"
-                                className="text-3xl font-bold text-card-foreground dark:text-dark-card-foreground tracking-tighter"
-                                onClick={() => closeUserMenu()}
-                            >
-                                SHOPHUB
-                            </Link>
+                            <div className="flex items-center gap-3">
+                                {/* ✅ Logo image opens preview */}
+                                <button
+                                    type="button"
+                                    onClick={openLogoPreview}
+                                    className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:focus-visible:ring-dark-ring/40"
+                                    aria-label="Preview logo"
+                                    title="Preview logo"
+                                >
+                                    <img
+                                        src={BRAND_LOGO_SRC}
+                                        alt={BRAND_NAME}
+                                        className="h-10 w-10 rounded-full object-cover shadow-soft"
+                                    />
+                                </button>
+
+                                {/* ✅ Brand text goes home */}
+                                <Link
+                                    to="/"
+                                    className="text-2xl sm:text-3xl font-bold text-card-foreground dark:text-dark-card-foreground tracking-tighter"
+                                    onClick={() => closeUserMenu()}
+                                    aria-label={BRAND_NAME}
+                                    title="Go to home"
+                                >
+                                    {BRAND_NAME}
+                                </Link>
+                            </div>
                         </div>
 
                         {/* Desktop Search */}
@@ -398,18 +482,10 @@ const Navbar = () => {
                                 whileHover={{ y: -1 }}
                                 whileTap={{ scale: 0.98 }}
                                 className="p-2 rounded-full text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 hover:text-card-foreground dark:hover:text-dark-card-foreground transition-colors"
-                                aria-label={
-                                    isDark
-                                        ? "Switch to light mode"
-                                        : "Switch to dark mode"
-                                }
+                                aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
                                 title={isDark ? "Light mode" : "Dark mode"}
                             >
-                                {isDark ? (
-                                    <FaSun size={18} />
-                                ) : (
-                                    <FaMoon size={18} />
-                                )}
+                                {isDark ? <FaSun size={18} /> : <FaMoon size={18} />}
                             </motion.button>
 
                             <NavLink
@@ -442,9 +518,7 @@ const Navbar = () => {
                                 <div className="relative" ref={userMenuRef}>
                                     <button
                                         type="button"
-                                        onClick={() =>
-                                            setIsUserMenuOpen((v) => !v)
-                                        }
+                                        onClick={() => setIsUserMenuOpen((v) => !v)}
                                         className="flex items-center p-2 rounded-full hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
                                         aria-haspopup="menu"
                                         aria-expanded={isUserMenuOpen}
@@ -463,48 +537,40 @@ const Navbar = () => {
                                     <AnimatePresence>
                                         {isUserMenuOpen && (
                                             <motion.div
-                                                initial={{
-                                                    opacity: 0,
-                                                    y: 8,
-                                                    scale: 0.98,
-                                                }}
-                                                animate={{
-                                                    opacity: 1,
-                                                    y: 0,
-                                                    scale: 1,
-                                                }}
-                                                exit={{
-                                                    opacity: 0,
-                                                    y: 8,
-                                                    scale: 0.98,
-                                                }}
+                                                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                                                animate={{ opacity: 1, y: 0, scale: 1 }}
+                                                exit={{ opacity: 0, y: 8, scale: 0.98 }}
                                                 transition={{
                                                     duration: 0.18,
                                                     ease: [0.22, 1, 0.36, 1],
                                                 }}
-                                                className="absolute right-0 mt-2 w-48 bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg shadow-lg p-2 z-50"
+                                                className="absolute right-0 mt-2 w-56 bg-card dark:bg-dark-card border border-border dark:border-dark-border rounded-lg shadow-lg p-2 z-50"
                                                 role="menu"
                                             >
-                                                <NavItem
-                                                    to="/profile"
-                                                    icon={FaUser}
-                                                >
+                                                <NavItem to="/profile" icon={FaUser}>
                                                     Profile
                                                 </NavItem>
 
+                                                <NavItem to="/my-orders" icon={FaClipboardList}>
+                                                    My Orders
+                                                </NavItem>
+
                                                 {user.role === "admin" && (
-                                                    <NavItem
-                                                        to="/admin"
-                                                        icon={FaTachometerAlt}
-                                                    >
-                                                        Admin
-                                                    </NavItem>
+                                                    <>
+                                                        <NavItem to="/admin" icon={FaTachometerAlt}>
+                                                            Admin
+                                                        </NavItem>
+                                                        <NavItem to="/admin/subscribers" icon={FaEnvelopeOpenText}>
+                                                            Subscribers
+                                                        </NavItem>
+                                                    </>
                                                 )}
 
                                                 <button
                                                     onClick={handleLogout}
                                                     className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium text-muted-foreground dark:text-dark-muted-foreground hover:bg-destructive/10 dark:hover:bg-dark-destructive/10 hover:text-destructive dark:hover:text-dark-destructive"
                                                     role="menuitem"
+                                                    type="button"
                                                 >
                                                     <FaSignOutAlt className="w-5 h-5" />
                                                     <span>Logout</span>
@@ -524,15 +590,26 @@ const Navbar = () => {
                         </div>
 
                         {/* Mobile Menu Button */}
-                        <div className="md:hidden flex items-center">
+                        <div className="md:hidden flex items-center gap-2">
                             <button
+                                type="button"
+                                onClick={openSearch}
+                                className="p-2 rounded-xl text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
+                                aria-label="Open search"
+                            >
+                                <FaSearch size={20} />
+                            </button>
+
+                            <button
+                                type="button"
                                 onClick={() => {
                                     closeUserMenu();
                                     setMenuOpen(true);
                                 }}
-                                className="p-2 rounded-md text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
+                                className="p-2 rounded-xl text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
+                                aria-label="Open menu"
                             >
-                                <FaBars size={24} />
+                                <FaBars size={22} />
                             </button>
                         </div>
                     </div>
@@ -554,11 +631,11 @@ const Navbar = () => {
                                         key={i}
                                         className="flex items-center gap-5 animate-pulse"
                                     >
-                                        <div className="h-20 w-20 rounded-2xl bg-slate-100" />
+                                        <div className="h-20 w-20 rounded-2xl bg-black/10 dark:bg-white/10" />
                                         <div className="flex-1">
-                                            <div className="h-3 w-24 rounded bg-slate-100" />
-                                            <div className="mt-3 h-5 w-3/5 rounded bg-slate-100" />
-                                            <div className="mt-3 h-4 w-28 rounded bg-slate-100" />
+                                            <div className="h-3 w-24 rounded bg-black/10 dark:bg-white/10" />
+                                            <div className="mt-3 h-5 w-3/5 rounded bg-black/10 dark:bg-white/10" />
+                                            <div className="mt-3 h-4 w-28 rounded bg-black/10 dark:bg-white/10" />
                                         </div>
                                     </div>
                                 ))}
@@ -566,7 +643,7 @@ const Navbar = () => {
                         )}
 
                         {!isSearching && searchError && (
-                            <div className="px-6 py-6 text-sm text-red-600">
+                            <div className="px-6 py-6 text-sm text-destructive">
                                 {searchError}
                             </div>
                         )}
@@ -587,14 +664,12 @@ const Navbar = () => {
                                     </div>
                                 ) : (
                                     <div className="px-6 py-10">
-                                        <div className="rounded-2xl border border-slate-200 bg-[#FCFAF7] px-6 py-8 text-center">
-                                            <p className="text-lg font-semibold text-[#2D2A26]">
-                                                ✨ No creations found
+                                        <div className="rounded-2xl border border-border dark:border-dark-border bg-card dark:bg-dark-card px-6 py-8 text-center">
+                                            <p className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground">
+                                                No creations found
                                             </p>
-                                            <p className="mt-2 text-sm text-[#7A7067]">
-                                                We couldn't find any creations
-                                                matching your search. Try
-                                                another keyword.
+                                            <p className="mt-2 text-sm text-text-secondary dark:text-dark-muted-foreground">
+                                                We couldn't find any creations matching your search. Try another keyword.
                                             </p>
                                         </div>
                                     </div>
@@ -622,103 +697,231 @@ const Navbar = () => {
                 )}
             </SearchModal>
 
-            {/* Mobile Menu */}
+            {/* Mobile Menu (overlay + drawer) */}
             <AnimatePresence>
                 {isMenuOpen && (
-                    <motion.div
-                        initial="closed"
-                        animate="open"
-                        exit="closed"
-                        variants={menuVariants}
-                        className="fixed inset-y-0 right-0 w-full max-w-sm bg-background dark:bg-dark-card p-6 z-50 md:hidden border-l border-border dark:border-dark-border"
-                    >
-                        <div className="flex items-center justify-between mb-8">
-                            <Link
-                                to="/"
-                                className="text-3xl font-bold text-card-foreground dark:text-dark-card-foreground tracking-tighter"
-                                onClick={() => setMenuOpen(false)}
-                            >
-                                SHOPHUB
-                            </Link>
-                            <button
-                                onClick={() => setMenuOpen(false)}
-                                className="p-2 rounded-md text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
-                            >
-                                <FaTimes size={24} />
-                            </button>
-                        </div>
+                    <>
+                        <motion.div
+                            initial="closed"
+                            animate="open"
+                            exit="closed"
+                            variants={overlayVariants}
+                            className="fixed inset-0 z-[60] bg-black/45 backdrop-blur-[2px] md:hidden"
+                            onMouseDown={(e) => {
+                                if (e.target === e.currentTarget) closeMobileMenu();
+                            }}
+                            aria-hidden="true"
+                        />
 
-                        <div className="relative mb-6">
-                            <input
-                                type="text"
-                                placeholder="Search handmade creations..."
-                                value={keyword}
-                                readOnly
-                                onClick={openSearch}
-                                className={[
-                                    "w-full rounded-lg pl-10 pr-4 py-2 cursor-pointer",
-                                    "border border-border/80 dark:border-dark-border",
-                                    "bg-card/70 dark:bg-dark-secondary/70",
-                                    "text-card-foreground dark:text-dark-card-foreground",
-                                    "placeholder:text-muted-foreground dark:placeholder:text-dark-muted-foreground",
-                                    "focus:outline-none focus:ring-2 focus:ring-ring/50 dark:focus:ring-dark-ring/40",
-                                ].join(" ")}
-                            />
-                            <FaSearch className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground dark:text-dark-muted-foreground" />
-                        </div>
-
-                        {/* Mobile theme toggle */}
-                        <button
-                            type="button"
-                            onClick={handleToggleTheme}
-                            className="mb-6 w-full flex items-center justify-between rounded-2xl border border-border dark:border-dark-border bg-card/70 dark:bg-dark-secondary/70 px-4 py-3 text-card-foreground dark:text-dark-card-foreground"
+                        <motion.aside
+                            initial="closed"
+                            animate="open"
+                            exit="closed"
+                            variants={drawerVariants}
+                            className={[
+                                "fixed inset-y-0 right-0 z-[61] md:hidden",
+                                "w-[88vw] max-w-[420px]",
+                                "bg-background dark:bg-dark-card",
+                                "border-l border-border dark:border-dark-border",
+                                "shadow-2xl",
+                                "p-6",
+                            ].join(" ")}
+                            role="dialog"
+                            aria-modal="true"
+                            aria-label="Mobile menu"
                         >
-                            <span className="font-semibold">
-                                {isDark ? "Light Mode" : "Dark Mode"}
-                            </span>
-                            {isDark ? <FaSun /> : <FaMoon />}
-                        </button>
-
-                        <nav className="flex flex-col space-y-2">
-                            <NavItem to="/" icon={FaHome}>
-                                Home
-                            </NavItem>
-                            <NavItem to="/cart" icon={FaShoppingCart}>
-                                Cart
-                            </NavItem>
-                            <NavItem to="/wishlist" icon={FaHeart}>
-                                Wishlist
-                            </NavItem>
-
-                            {user ? (
-                                <>
-                                    <hr className="border-border dark:border-dark-border my-2" />
-                                    <NavItem to="/profile" icon={FaUser}>
-                                        Profile
-                                    </NavItem>
-                                    {user.role === "admin" && (
-                                        <NavItem to="/admin" icon={FaTachometerAlt}>
-                                            Admin
-                                        </NavItem>
-                                    )}
+                            <div className="flex items-center justify-between mb-6">
+                                <div className="flex items-center gap-3">
+                                    {/* ✅ Drawer logo image opens preview */}
                                     <button
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-2 rounded-md text-base font-medium text-muted-foreground dark:text-dark-muted-foreground hover:bg-destructive/10 dark:hover:bg-dark-destructive/10 hover:text-destructive dark:hover:text-dark-destructive"
+                                        type="button"
+                                        onClick={openLogoPreview}
+                                        className="rounded-full focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/40 dark:focus-visible:ring-dark-ring/40"
+                                        aria-label="Preview logo"
+                                        title="Preview logo"
                                     >
-                                        <FaSignOutAlt className="w-5 h-5" />
-                                        <span>Logout</span>
+                                        <img
+                                            src={BRAND_LOGO_SRC}
+                                            alt={BRAND_NAME}
+                                            className="h-10 w-10 rounded-full object-cover shadow-soft"
+                                        />
                                     </button>
-                                </>
-                            ) : (
-                                <Link
-                                    to="/login"
-                                    onClick={() => setMenuOpen(false)}
-                                    className="mt-4 px-4 py-3 bg-primary dark:bg-dark-primary text-primary-foreground dark:text-dark-primary-foreground rounded-lg text-base font-semibold hover:bg-primary/90 dark:hover:bg-dark-primary/90 text-center transition-colors"
+
+                                    {/* ✅ Drawer brand text goes home */}
+                                    <Link
+                                        to="/"
+                                        className="text-2xl font-bold text-card-foreground dark:text-dark-card-foreground tracking-tighter"
+                                        onClick={closeMobileMenu}
+                                        aria-label={BRAND_NAME}
+                                        title="Go to home"
+                                    >
+                                        {BRAND_NAME}
+                                    </Link>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={closeMobileMenu}
+                                    className="p-2 rounded-xl text-muted-foreground dark:text-dark-muted-foreground hover:bg-card/60 dark:hover:bg-dark-secondary/60 transition-colors"
+                                    aria-label="Close menu"
                                 >
-                                    Login
+                                    <FaTimes size={22} />
+                                </button>
+                            </div>
+
+                            {/* Quick counters row */}
+                            <div className="grid grid-cols-2 gap-3 mb-5">
+                                <Link
+                                    to="/wishlist"
+                                    onClick={closeMobileMenu}
+                                    className="rounded-2xl border border-border dark:border-dark-border bg-card/70 dark:bg-dark-secondary/50 px-4 py-3 flex items-center justify-between"
+                                >
+                                    <span className="flex items-center gap-3 text-text-primary dark:text-dark-card-foreground font-semibold">
+                                        <FaHeart />
+                                        Wishlist
+                                    </span>
+                                    <span className="text-sm text-text-secondary dark:text-dark-muted-foreground">
+                                        {wishlist.length}
+                                    </span>
                                 </Link>
-                            )}
-                        </nav>
+
+                                <Link
+                                    to="/cart"
+                                    onClick={closeMobileMenu}
+                                    className="rounded-2xl border border-border dark:border-dark-border bg-card/70 dark:bg-dark-secondary/50 px-4 py-3 flex items-center justify-between"
+                                >
+                                    <span className="flex items-center gap-3 text-text-primary dark:text-dark-card-foreground font-semibold">
+                                        <FaShoppingCart />
+                                        Cart
+                                    </span>
+                                    <span className="text-sm text-text-secondary dark:text-dark-muted-foreground">
+                                        {totalCartItems}
+                                    </span>
+                                </Link>
+                            </div>
+
+                            {/* Theme toggle */}
+                            <button
+                                type="button"
+                                onClick={handleToggleTheme}
+                                className="mb-5 w-full flex items-center justify-between rounded-2xl border border-border dark:border-dark-border bg-card/70 dark:bg-dark-secondary/50 px-4 py-3 text-card-foreground dark:text-dark-card-foreground"
+                            >
+                                <span className="font-semibold">
+                                    {isDark ? "Light Mode" : "Dark Mode"}
+                                </span>
+                                {isDark ? <FaSun /> : <FaMoon />}
+                            </button>
+
+                            <nav className="flex flex-col space-y-2">
+                                <NavItem to="/" icon={FaHome}>
+                                    Home
+                                </NavItem>
+
+                                <NavItem to="/cart" icon={FaShoppingCart}>
+                                    Cart
+                                </NavItem>
+
+                                <NavItem to="/wishlist" icon={FaHeart}>
+                                    Wishlist
+                                </NavItem>
+
+                                {user ? (
+                                    <>
+                                        <div className="my-2 h-px bg-border dark:bg-dark-border" />
+
+                                        <NavItem to="/profile" icon={FaUser}>
+                                            Profile
+                                        </NavItem>
+
+                                        <NavItem to="/my-orders" icon={FaClipboardList}>
+                                            My Orders
+                                        </NavItem>
+
+                                        {user.role === "admin" && (
+                                            <>
+                                                <NavItem to="/admin" icon={FaTachometerAlt}>
+                                                    Admin
+                                                </NavItem>
+                                                <NavItem to="/admin/subscribers" icon={FaEnvelopeOpenText}>
+                                                    Subscribers
+                                                </NavItem>
+                                            </>
+                                        )}
+
+                                        <button
+                                            onClick={handleLogout}
+                                            className="w-full flex items-center gap-3 px-4 py-3 rounded-2xl text-base font-semibold text-muted-foreground dark:text-dark-muted-foreground hover:bg-destructive/10 dark:hover:bg-dark-destructive/10 hover:text-destructive dark:hover:text-dark-destructive transition-colors"
+                                            type="button"
+                                        >
+                                            <FaSignOutAlt className="w-5 h-5" />
+                                            <span>Logout</span>
+                                        </button>
+                                    </>
+                                ) : (
+                                    <Link
+                                        to="/login"
+                                        onClick={closeMobileMenu}
+                                        className="mt-3 px-4 py-3 bg-primary dark:bg-dark-primary text-primary-foreground dark:text-dark-primary-foreground rounded-2xl text-base font-semibold hover:bg-primary/90 dark:hover:bg-dark-primary/90 text-center transition-colors"
+                                    >
+                                        Login
+                                    </Link>
+                                )}
+                            </nav>
+
+                            <div className="mt-6 text-xs text-text-secondary dark:text-dark-muted-foreground leading-relaxed">
+                                Handmade, thoughtfully crafted — with calm, careful details in every piece.
+                            </div>
+                        </motion.aside>
+                    </>
+                )}
+            </AnimatePresence>
+
+            {/* ✅ Logo preview modal (medium size) */}
+            <AnimatePresence>
+                {isLogoPreviewOpen && (
+                    <motion.div
+                        className="fixed inset-0 z-[90] flex items-center justify-center p-4"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        onMouseDown={(e) => {
+                            if (e.target === e.currentTarget) closeLogoPreview();
+                        }}
+                        role="dialog"
+                        aria-modal="true"
+                        aria-label="Logo preview"
+                    >
+                        <div className="absolute inset-0 bg-black/45 backdrop-blur-[2px]" />
+
+                        <motion.div
+                            initial={{ opacity: 0, y: 12, scale: 0.985 }}
+                            animate={{ opacity: 1, y: 0, scale: 1 }}
+                            exit={{ opacity: 0, y: 12, scale: 0.985 }}
+                            transition={{ duration: 0.25, ease: [0.22, 1, 0.36, 1] }}
+                            className="relative w-full max-w-md rounded-[26px] border border-border/70 dark:border-dark-border bg-card dark:bg-dark-card shadow-2xl p-5"
+                        >
+                            <button
+                                type="button"
+                                onClick={closeLogoPreview}
+                                className="absolute right-3 top-3 flex h-10 w-10 items-center justify-center rounded-full border border-border dark:border-dark-border bg-background/80 dark:bg-dark-secondary/60 text-text-primary dark:text-dark-card-foreground shadow-soft"
+                                aria-label="Close logo preview"
+                                title="Close"
+                            >
+                                <FaTimes />
+                            </button>
+
+                            <div className="rounded-2xl border border-border/60 dark:border-dark-border bg-background dark:bg-dark-secondary/30 p-6 flex items-center justify-center">
+                                <img
+                                    src={BRAND_LOGO_SRC}
+                                    alt={BRAND_NAME}
+                                    className="h-44 w-44 sm:h-56 sm:w-56 object-contain"
+                                />
+                            </div>
+
+                            <p className="mt-4 text-center font-serif text-lg font-semibold text-text-primary dark:text-dark-card-foreground">
+                                {BRAND_NAME}
+                            </p>
+                        </motion.div>
                     </motion.div>
                 )}
             </AnimatePresence>

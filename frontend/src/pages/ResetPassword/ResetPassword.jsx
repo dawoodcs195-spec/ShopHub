@@ -1,143 +1,113 @@
 import { useState } from "react";
-import {
-    Link,
-    useNavigate,
-    useParams,
-} from "react-router-dom";
+import { Link, useNavigate, useParams } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import { resetPassword } from "../../services/authService";
+import Input from "../../components/forms/Input";
 
 const ResetPassword = () => {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
+  const { token } = useParams();
 
-    const { token } = useParams();
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
 
-    const [password, setPassword] =
-        useState("");
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    const [confirmPassword, setConfirmPassword] =
-        useState("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const [loading, setLoading] =
-        useState(false);
+    setError("");
+    setSuccess("");
 
-    const [error, setError] =
-        useState("");
+    if (password !== confirmPassword) {
+      const msg = "Passwords do not match.";
+      setError(msg);
+      toast.error(msg);
+      return;
+    }
 
-    const [success, setSuccess] =
-        useState("");
+    try {
+      setLoading(true);
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+      const data = await resetPassword(token, password);
 
-        setError("");
-        setSuccess("");
+      setSuccess(data.message);
+      toast.success(data.message);
 
-        if (password !== confirmPassword) {
-            setError(
-                "Passwords do not match."
-            );
-            return;
-        }
+      setTimeout(() => {
+        navigate("/login");
+      }, 2000);
+    } catch (error) {
+      const msg = error.response?.data?.message || "Failed to reset password.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-        try {
-            setLoading(true);
+  return (
+    <div className="min-h-screen bg-background dark:bg-dark-background flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md bg-card dark:bg-dark-card border border-border dark:border-dark-border shadow-soft-lg rounded-2xl p-6 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground text-center">
+          Reset Password
+        </h1>
 
-            const data =
-                await resetPassword(
-                    token,
-                    password
-                );
+        <p className="mt-3 text-sm sm:text-base text-text-secondary dark:text-dark-muted-foreground text-center leading-7">
+          Choose a new password for your account.
+        </p>
 
-            setSuccess(data.message);
+        {error && (
+          <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
-            setTimeout(() => {
-                navigate("/login");
-            }, 2000);
-        } catch (error) {
-            setError(
-                error.response?.data
-                    ?.message ||
-                    "Failed to reset password."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+        {success && (
+          <div className="mt-6 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-emerald-300">
+            {success}
+          </div>
+        )}
 
-    return (
-        <div className="max-w-md mx-auto mt-16 bg-white shadow-lg rounded-xl p-8">
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Reset Password
-            </h1>
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <Input
+            type="password"
+            placeholder="New Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+            required
+            minLength={6}
+          />
 
-            {error && (
-                <div className="bg-red-100 text-red-600 p-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
+          <Input
+            type="password"
+            placeholder="Confirm Password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
+            required
+            minLength={6}
+          />
 
-            {success && (
-                <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-                    {success}
-                </div>
-            )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-white font-semibold py-3 rounded-xl shadow-soft hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "Updating..." : "Reset Password"}
+          </button>
+        </form>
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-4"
-            >
-                <input
-                    type="password"
-                    placeholder="New Password"
-                    value={password}
-                    onChange={(e) =>
-                        setPassword(
-                            e.target.value
-                        )
-                    }
-                    className="w-full border p-3 rounded-lg"
-                    required
-                    minLength={6}
-                />
-
-                <input
-                    type="password"
-                    placeholder="Confirm Password"
-                    value={
-                        confirmPassword
-                    }
-                    onChange={(e) =>
-                        setConfirmPassword(
-                            e.target.value
-                        )
-                    }
-                    className="w-full border p-3 rounded-lg"
-                    required
-                    minLength={6}
-                />
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60"
-                >
-                    {loading
-                        ? "Updating..."
-                        : "Reset Password"}
-                </button>
-            </form>
-
-            <p className="text-center mt-6">
-                <Link
-                    to="/login"
-                    className="text-blue-600 font-semibold"
-                >
-                    Back to Login
-                </Link>
-            </p>
-        </div>
-    );
+        <p className="text-center mt-6 text-sm text-text-secondary dark:text-dark-muted-foreground">
+          <Link to="/login" className="text-primary font-semibold hover:underline">
+            Back to Login
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default ResetPassword;

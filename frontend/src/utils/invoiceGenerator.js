@@ -1,5 +1,7 @@
 import jsPDF from "jspdf";
 
+const BRAND_NAME = "Diya Expressions";
+
 const formatCurrency = (value) => {
     return `Rs. ${Number(value || 0).toLocaleString()}`;
 };
@@ -69,7 +71,7 @@ export const generateInvoice = (order) => {
     doc.setFontSize(26);
     doc.setTextColor(255, 255, 255);
 
-    doc.text("ShopHub", 15, 18);
+    doc.text(BRAND_NAME, 15, 18);
 
     doc.setFontSize(11);
 
@@ -479,7 +481,7 @@ export const generateInvoice = (order) => {
     doc.setTextColor(37, 99, 235);
 
     doc.text(
-        "Thank you for shopping with ShopHub!",
+        `Thank you for shopping with ${BRAND_NAME}!`,
         pageWidth / 2,
         footerY,
         {
@@ -495,7 +497,7 @@ export const generateInvoice = (order) => {
     doc.setTextColor(90, 90, 90);
 
     doc.text(
-        "This invoice was generated automatically by ShopHub.",
+        `This invoice was generated automatically by ${BRAND_NAME}.`,
         pageWidth / 2,
         footerY + 6,
         {

@@ -1,5 +1,7 @@
 const nodemailer = require("nodemailer");
 
+const BRAND_NAME = "Diya Expressions";
+
 // ===============================
 // Mail Transport
 // ===============================
@@ -38,7 +40,7 @@ const sendWelcomeEmail = async (
     const html = `
         <div style="font-family: Arial, sans-serif; max-width:600px; margin:auto;">
             <h1 style="color:#2563eb;">
-                Welcome to ShopHub 🎉
+                Welcome to ${BRAND_NAME} 🎉
             </h1>
 
             <p>
@@ -46,7 +48,7 @@ const sendWelcomeEmail = async (
             </p>
 
             <p>
-                Thank you for creating your ShopHub account.
+                Thank you for creating your ${BRAND_NAME} account.
             </p>
 
             <p>
@@ -59,14 +61,14 @@ const sendWelcomeEmail = async (
             <p style="color:#666;">
                 Happy Shopping!
                 <br />
-                <strong>ShopHub Team</strong>
+                <strong>${BRAND_NAME} Team</strong>
             </p>
         </div>
     `;
 
     await sendEmail({
         to: user.email,
-        subject: "Welcome to ShopHub",
+        subject: `Welcome to ${BRAND_NAME}`,
         html,
     });
 };
@@ -115,14 +117,14 @@ const sendOrderConfirmationEmail =
                 </p>
 
                 <p>
-                    Thank you for shopping with ShopHub.
+                    Thank you for shopping with ${BRAND_NAME}.
                 </p>
             </div>
         `;
 
         await sendEmail({
             to: user.email,
-            subject: "Your ShopHub Order",
+            subject: `Your ${BRAND_NAME} Order`,
             html,
         });
     };
@@ -149,7 +151,7 @@ const sendAdminNewOrderEmail =
                 </h2>
 
                 <p>
-                    A new order has been placed on ShopHub.
+                    A new order has been placed on ${BRAND_NAME}.
                 </p>
 
                 <hr />
@@ -242,21 +244,21 @@ const sendDeliveredEmail =
                 </p>
 
                 <p>
-                    Thank you for shopping with ShopHub.
+                    Thank you for shopping with ${BRAND_NAME}.
                     We hope to see you again soon.
                 </p>
 
                 <hr />
 
                 <p>
-                    <strong>ShopHub Team</strong>
+                    <strong>${BRAND_NAME} Team</strong>
                 </p>
             </div>
         `;
 
         await sendEmail({
             to: user.email,
-            subject: "Your ShopHub Order Has Been Delivered",
+            subject: `Your ${BRAND_NAME} Order Has Been Delivered`,
             html,
         });
     };

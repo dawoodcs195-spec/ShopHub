@@ -1,3 +1,5 @@
+const BRAND_NAME = "Diya Expressions";
+
 const escapeCsv = (value) => {
     if (value === null || value === undefined) {
         return "";
@@ -76,7 +78,7 @@ export const exportOrdersCsv = (
         .slice(0, 10);
 
     link.href = url;
-    link.download = `ShopHub-Orders-${date}.csv`;
+    link.download = `Diya-Expressions-Orders-${date}.csv`;
 
     document.body.appendChild(link);
 

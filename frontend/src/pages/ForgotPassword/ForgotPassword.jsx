@@ -1,107 +1,91 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
+import toast from "react-hot-toast";
 
 import { forgotPassword } from "../../services/authService";
+import Input from "../../components/forms/Input";
 
 const ForgotPassword = () => {
-    const [email, setEmail] = useState("");
+  const [email, setEmail] = useState("");
 
-    const [loading, setLoading] =
-        useState(false);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
 
-    const [error, setError] =
-        useState("");
+  const handleSubmit = async (e) => {
+    e.preventDefault();
 
-    const [success, setSuccess] =
-        useState("");
+    setError("");
+    setSuccess("");
 
-    const handleSubmit = async (e) => {
-        e.preventDefault();
+    try {
+      setLoading(true);
 
-        setError("");
-        setSuccess("");
+      const data = await forgotPassword(email);
 
-        try {
-            setLoading(true);
+      setSuccess(data.message);
+      toast.success(data.message);
+      setEmail("");
+    } catch (error) {
+      const msg =
+        error.response?.data?.message || "Failed to send password reset email.";
+      setError(msg);
+      toast.error(msg);
+    } finally {
+      setLoading(false);
+    }
+  };
 
-            const data =
-                await forgotPassword(email);
+  return (
+    <div className="min-h-screen bg-background dark:bg-dark-background flex items-center justify-center px-4 py-10">
+      <div className="w-full max-w-md bg-card dark:bg-dark-card border border-border dark:border-dark-border shadow-soft-lg rounded-2xl p-6 sm:p-8">
+        <h1 className="text-2xl sm:text-3xl font-serif font-bold text-text-primary dark:text-dark-card-foreground text-center">
+          Forgot Password
+        </h1>
 
-            setSuccess(data.message);
-            setEmail("");
-        } catch (error) {
-            setError(
-                error.response?.data
-                    ?.message ||
-                    "Failed to send password reset email."
-            );
-        } finally {
-            setLoading(false);
-        }
-    };
+        <p className="mt-3 text-sm sm:text-base text-text-secondary dark:text-dark-muted-foreground text-center leading-7">
+          Enter your registered email address. We’ll send you a password reset link.
+        </p>
 
-    return (
-        <div className="max-w-md mx-auto mt-16 bg-white shadow-lg rounded-xl p-8">
-            <h1 className="text-3xl font-bold text-center mb-6">
-                Forgot Password
-            </h1>
+        {error && (
+          <div className="mt-6 rounded-xl border border-destructive/20 bg-destructive/10 px-4 py-3 text-sm text-destructive">
+            {error}
+          </div>
+        )}
 
-            <p className="text-gray-600 text-center mb-6">
-                Enter your registered email address.
-                We'll send you a password reset link.
-            </p>
+        {success && (
+          <div className="mt-6 rounded-xl border border-green-500/20 bg-green-500/10 px-4 py-3 text-sm text-green-700 dark:text-emerald-300">
+            {success}
+          </div>
+        )}
 
-            {error && (
-                <div className="bg-red-100 text-red-600 p-3 rounded mb-4">
-                    {error}
-                </div>
-            )}
+        <form onSubmit={handleSubmit} className="mt-6 space-y-4">
+          <Input
+            type="email"
+            placeholder="Email Address"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+            required
+          />
 
-            {success && (
-                <div className="bg-green-100 text-green-700 p-3 rounded mb-4">
-                    {success}
-                </div>
-            )}
+          <button
+            type="submit"
+            disabled={loading}
+            className="w-full bg-primary text-white font-semibold py-3 rounded-xl shadow-soft hover:bg-primary-hover transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {loading ? "Sending..." : "Send Reset Link"}
+          </button>
+        </form>
 
-            <form
-                onSubmit={handleSubmit}
-                className="space-y-4"
-            >
-                <input
-                    type="email"
-                    placeholder="Email Address"
-                    value={email}
-                    onChange={(e) =>
-                        setEmail(
-                            e.target.value
-                        )
-                    }
-                    className="w-full border p-3 rounded-lg"
-                    required
-                />
-
-                <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-60"
-                >
-                    {loading
-                        ? "Sending..."
-                        : "Send Reset Link"}
-                </button>
-            </form>
-
-            <p className="text-center mt-6">
-                Remember your password?{" "}
-                <Link
-                    to="/login"
-                    className="text-blue-600 font-semibold"
-                >
-                    Login
-                </Link>
-            </p>
-        </div>
-    );
+        <p className="text-center mt-6 text-sm text-text-secondary dark:text-dark-muted-foreground">
+          Remember your password?{" "}
+          <Link to="/login" className="text-primary font-semibold hover:underline">
+            Login
+          </Link>
+        </p>
+      </div>
+    </div>
+  );
 };
 
 export default ForgotPassword;

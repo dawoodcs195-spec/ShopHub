@@ -10,7 +10,6 @@
     --sh-text-muted: #9a8f89;
   }
 
-  /* When html has class="dark" */
   .dark {
     --sh-text-primary: #f4eee9;
     --sh-text-secondary: #cfc2bb;
@@ -47,5 +46,18 @@
 
   .dark :where(a, button, input, textarea, select, summary):focus-visible {
     @apply ring-dark-ring/30;
+  }
+
+  /* ✅ More compact mobile scale (desktop unchanged) */
+  @media (max-width: 640px) {
+    html { font-size: 14.75px; }
+  }
+
+  @media (max-width: 420px) {
+    html { font-size: 14.25px; }
+  }
+
+  @media (max-width: 360px) {
+    html { font-size: 13.75px; }
   }
 }

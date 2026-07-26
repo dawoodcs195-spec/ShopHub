@@ -6,6 +6,8 @@ const {
     sendEmail,
 } = require("../services/emailService");
 
+const BRAND_NAME = "Diya Expressions";
+
 // ===============================
 // Forgot Password
 // ===============================
@@ -66,7 +68,7 @@ const forgotPassword = async (
                 </p>
 
                 <p>
-                    We received a request to reset your ShopHub password.
+                    We received a request to reset your ${BRAND_NAME} password.
                 </p>
 
                 <p>
@@ -102,7 +104,7 @@ const forgotPassword = async (
                 <hr />
 
                 <p style="color:#666;">
-                    ShopHub Team
+                    ${BRAND_NAME} Team
                 </p>
             </div>
         `;
@@ -110,7 +112,7 @@ const forgotPassword = async (
         await sendEmail({
             to: user.email,
             subject:
-                "ShopHub Password Reset",
+                `${BRAND_NAME} Password Reset`,
             html,
         });
 

@@ -5,7 +5,7 @@ import toast from "react-hot-toast";
 import { useAuth } from "../../context/AuthContext";
 import { uploadImage } from "../../services/uploadService";
 
-const DEFAULT_BRAND = "SHOPHUB";
+const DEFAULT_BRAND = "Diya Expressions";
 
 const normalizeImages = (initialData) => {
   const imgs = [];
@@ -278,7 +278,6 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData, loading }) =
                         className="h-24 w-full object-cover"
                       />
 
-                      {/* Cover badge */}
                       {idx === 0 && (
                         <div className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-accent px-2 py-1 text-[11px] font-semibold text-accent-foreground shadow-sm">
                           <FaCrown />
@@ -286,7 +285,6 @@ const ProductFormModal = ({ isOpen, onClose, onSubmit, initialData, loading }) =
                         </div>
                       )}
 
-                      {/* Actions */}
                       <div className="absolute right-2 top-2 flex gap-2">
                         {idx !== 0 && (
                           <button

@@ -37,7 +37,7 @@ const uploadImage = async (req, res) => {
 
         const result = await uploadToCloudinary(
             req.file.buffer,
-            "ShopHub/Products"
+            "DiyaExpressions/Products"
         );
 
         return res.status(200).json({
@@ -70,7 +70,7 @@ const uploadAvatar = async (req, res) => {
 
         const result = await uploadToCloudinary(
             req.file.buffer,
-            "ShopHub/Avatars"
+            "DiyaExpressions/Avatars"
         );
 
         return res.status(200).json({

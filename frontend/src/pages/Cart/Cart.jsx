@@ -29,7 +29,6 @@ const Cart = () => {
   );
 
   const primaryCategory = useMemo(() => {
-    // Choose the most common category in cart (if available)
     const counts = new Map();
     for (const item of cartItems) {
       if (!item?.category) continue;
@@ -126,7 +125,7 @@ const Cart = () => {
           </p>
         </div>
 
-        <div className="grid lg:grid-cols-3 lg:gap-12">
+        <div className="grid lg:grid-cols-3 lg:gap-12 gap-8">
           {/* Cart Items */}
           <motion.div
             className="lg:col-span-2 space-y-4"
@@ -148,82 +147,84 @@ const Cart = () => {
                     layout
                     variants={itemVariants}
                     exit="exit"
-                    className="bg-surface dark:bg-dark-card rounded-2xl border border-border dark:border-dark-border shadow-soft p-4 flex gap-4 items-center"
+                    className="bg-surface dark:bg-dark-card rounded-2xl border border-border dark:border-dark-border shadow-soft p-4"
                   >
-                    {/* Clickable area (Option A): image + name */}
-                    <Link
-                      to={`/product/${item._id}`}
-                      className="flex items-center gap-4 min-w-0"
-                    >
-                      <img
-                        src={
-                          item.image?.url ||
-                          "https://placehold.co/150x150/F5E1E6/422B3A?text=?"
-                        }
-                        alt={item.name}
-                        className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl object-cover border border-border dark:border-dark-border"
-                      />
-
-                      <div className="min-w-0">
-                        <h2 className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground truncate">
-                          {item.name}
-                        </h2>
-                        <p className="text-primary font-bold mt-1">
-                          Rs. {item.price.toLocaleString()}
-                        </p>
-                      </div>
-                    </Link>
-
-                    {/* Quantity controls */}
-                    <div className="ml-auto flex items-center gap-4">
-                      <div className="flex items-center gap-3 rounded-full border border-border dark:border-dark-border bg-card dark:bg-dark-background px-3 py-2">
-                        <button
-                          onClick={() =>
-                            updateQuantity(item._id, item.quantity - 1)
-                          }
-                          disabled={!canDecrease}
-                          className={[
-                            "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
-                            canDecrease
-                              ? "bg-secondary hover:bg-accent/60 text-text-primary dark:bg-dark-secondary/60 dark:hover:bg-dark-accent/50 dark:text-dark-card-foreground"
-                              : "bg-secondary/50 text-text-secondary cursor-not-allowed dark:bg-dark-secondary/30 dark:text-dark-muted-foreground",
-                          ].join(" ")}
-                          aria-label="Decrease quantity"
-                          type="button"
-                        >
-                          <FaMinus size={12} />
-                        </button>
-
-                        <span className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground w-8 text-center">
-                          {item.quantity}
-                        </span>
-
-                        <button
-                          onClick={() =>
-                            updateQuantity(item._id, item.quantity + 1)
-                          }
-                          disabled={!canIncrease}
-                          className={[
-                            "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
-                            canIncrease
-                              ? "bg-secondary hover:bg-accent/60 text-text-primary dark:bg-dark-secondary/60 dark:hover:bg-dark-accent/50 dark:text-dark-card-foreground"
-                              : "bg-secondary/50 text-text-secondary cursor-not-allowed dark:bg-dark-secondary/30 dark:text-dark-muted-foreground",
-                          ].join(" ")}
-                          aria-label="Increase quantity"
-                          type="button"
-                        >
-                          <FaPlus size={12} />
-                        </button>
-                      </div>
-
-                      <button
-                        onClick={() => removeFromCart(item._id)}
-                        className="text-text-secondary dark:text-dark-muted-foreground hover:text-destructive transition-colors p-2"
-                        aria-label="Remove item"
-                        type="button"
+                    <div className="flex flex-col sm:flex-row gap-4 sm:items-center">
+                      {/* Clickable area */}
+                      <Link
+                        to={`/product/${item._id}`}
+                        className="flex items-center gap-4 min-w-0"
                       >
-                        <FaTrash size={18} />
-                      </button>
+                        <img
+                          src={
+                            item.image?.url ||
+                            "https://placehold.co/150x150/F5E1E6/422B3A?text=?"
+                          }
+                          alt={item.name}
+                          className="w-24 h-24 sm:w-32 sm:h-32 rounded-xl object-cover border border-border dark:border-dark-border"
+                        />
+
+                        <div className="min-w-0">
+                          <h2 className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground truncate">
+                            {item.name}
+                          </h2>
+                          <p className="text-primary font-bold mt-1">
+                            Rs. {item.price.toLocaleString()}
+                          </p>
+                        </div>
+                      </Link>
+
+                      {/* Controls */}
+                      <div className="sm:ml-auto flex items-center justify-between sm:justify-end gap-4">
+                        <div className="flex items-center gap-3 rounded-full border border-border dark:border-dark-border bg-card dark:bg-dark-background px-3 py-2">
+                          <button
+                            onClick={() =>
+                              updateQuantity(item._id, item.quantity - 1)
+                            }
+                            disabled={!canDecrease}
+                            className={[
+                              "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
+                              canDecrease
+                                ? "bg-secondary hover:bg-accent/60 text-text-primary dark:bg-dark-secondary/60 dark:hover:bg-dark-accent/50 dark:text-dark-card-foreground"
+                                : "bg-secondary/50 text-text-secondary cursor-not-allowed dark:bg-dark-secondary/30 dark:text-dark-muted-foreground",
+                            ].join(" ")}
+                            aria-label="Decrease quantity"
+                            type="button"
+                          >
+                            <FaMinus size={12} />
+                          </button>
+
+                          <span className="text-lg font-semibold text-text-primary dark:text-dark-card-foreground w-8 text-center">
+                            {item.quantity}
+                          </span>
+
+                          <button
+                            onClick={() =>
+                              updateQuantity(item._id, item.quantity + 1)
+                            }
+                            disabled={!canIncrease}
+                            className={[
+                              "w-9 h-9 rounded-full flex items-center justify-center transition-colors",
+                              canIncrease
+                                ? "bg-secondary hover:bg-accent/60 text-text-primary dark:bg-dark-secondary/60 dark:hover:bg-dark-accent/50 dark:text-dark-card-foreground"
+                                : "bg-secondary/50 text-text-secondary cursor-not-allowed dark:bg-dark-secondary/30 dark:text-dark-muted-foreground",
+                            ].join(" ")}
+                            aria-label="Increase quantity"
+                            type="button"
+                          >
+                            <FaPlus size={12} />
+                          </button>
+                        </div>
+
+                        <button
+                          onClick={() => removeFromCart(item._id)}
+                          className="text-text-secondary dark:text-dark-muted-foreground hover:text-destructive transition-colors p-2"
+                          aria-label="Remove item"
+                          type="button"
+                        >
+                          <FaTrash size={18} />
+                        </button>
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -241,8 +242,8 @@ const Cart = () => {
           </motion.div>
 
           {/* Order Summary */}
-          <div className="lg:col-span-1 mt-8 lg:mt-0">
-            <div className="bg-surface dark:bg-dark-card rounded-2xl border border-border dark:border-dark-border shadow-soft p-6 sticky top-24">
+          <div className="lg:col-span-1">
+            <div className="bg-surface dark:bg-dark-card rounded-2xl border border-border dark:border-dark-border shadow-soft p-6 lg:sticky lg:top-24">
               <h2 className="text-2xl font-serif font-bold text-text-primary dark:text-dark-card-foreground mb-6">
                 Order Summary
               </h2>

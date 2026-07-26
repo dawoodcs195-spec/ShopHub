@@ -2,78 +2,64 @@ import { createContext, useContext, useEffect, useState } from "react";
 
 const AuthContext = createContext();
 
+const normalizeUser = (u) => {
+  if (!u) return null;
+  // Ensure both id and _id exist for compatibility across the app
+  return {
+    ...u,
+    _id: u._id || u.id,
+    id: u.id || u._id,
+  };
+};
+
 export const AuthProvider = ({ children }) => {
-    // ===============================
-    // User
-    // ===============================
-    const [user, setUser] = useState(() => {
-        const savedUser = localStorage.getItem("user");
-        return savedUser ? JSON.parse(savedUser) : null;
-    });
+  const [user, setUser] = useState(() => {
+    try {
+      const savedUser = localStorage.getItem("user");
+      const parsed = savedUser ? JSON.parse(savedUser) : null;
+      return normalizeUser(parsed);
+    } catch {
+      return null;
+    }
+  });
 
-    // ===============================
-    // Token
-    // ===============================
-    const [token, setToken] = useState(() => {
-        return localStorage.getItem("token") || null;
-    });
+  const [token, setToken] = useState(() => {
+    return localStorage.getItem("token") || null;
+  });
 
-    // ===============================
-    // Persist Auth
-    // ===============================
-    useEffect(() => {
-        if (user) {
-            localStorage.setItem(
-                "user",
-                JSON.stringify(user)
-            );
-        } else {
-            localStorage.removeItem("user");
-        }
+  useEffect(() => {
+    if (user) {
+      localStorage.setItem("user", JSON.stringify(user));
+    } else {
+      localStorage.removeItem("user");
+    }
 
-        if (token) {
-            localStorage.setItem("token", token);
-        } else {
-            localStorage.removeItem("token");
-        }
-    }, [user, token]);
+    if (token) {
+      localStorage.setItem("token", token);
+    } else {
+      localStorage.removeItem("token");
+    }
+  }, [user, token]);
 
-    // ===============================
-    // Login
-    // ===============================
-    const login = (userData, jwtToken) => {
-        setUser(userData);
-        setToken(jwtToken);
-    };
+  const login = (userData, jwtToken) => {
+    setUser(normalizeUser(userData));
+    setToken(jwtToken || null);
+  };
 
-    // ===============================
-    // Update User
-    // ===============================
-    const updateUser = (userData) => {
-        setUser(userData);
-    };
+  const updateUser = (userData) => {
+    setUser(normalizeUser(userData));
+  };
 
-    // ===============================
-    // Logout
-    // ===============================
-    const logout = () => {
-        setUser(null);
-        setToken(null);
-    };
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+  };
 
-    return (
-        <AuthContext.Provider
-            value={{
-                user,
-                token,
-                login,
-                updateUser,
-                logout,
-            }}
-        >
-            {children}
-        </AuthContext.Provider>
-    );
+  return (
+    <AuthContext.Provider value={{ user, token, login, updateUser, logout }}>
+      {children}
+    </AuthContext.Provider>
+  );
 };
 
 export const useAuth = () => useContext(AuthContext);

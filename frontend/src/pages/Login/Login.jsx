@@ -5,7 +5,8 @@ import toast from "react-hot-toast";
 
 import { loginUser } from "../../services/authService";
 import { useAuth } from "../../context/AuthContext";
-import Input from "../../components/forms/Input"; // Use our new reusable Input component
+import Input from "../../components/forms/Input";
+import LoadingOverlay from "../../components/common/LoadingOverlay";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -38,6 +39,8 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background dark:bg-dark-background p-4">
+      <LoadingOverlay isOpen={loading} label="Signing you in..." />
+
       <div className="max-w-4xl w-full grid lg:grid-cols-2 shadow-soft-lg rounded-xl overflow-hidden border border-border dark:border-dark-border bg-card dark:bg-dark-card">
         {/* Decorative Panel */}
         <motion.div

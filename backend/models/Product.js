@@ -42,7 +42,7 @@ const productSchema = new mongoose.Schema(
             type: String,
             required: [true, "Product category is required"],
         },
-        brand: { type: String, default: "No Brand" },
+        brand: { type: String, default: "Diya Expressions" },
         stock: { type: Number, required: true, default: 0 },
 
         // Cover image (for listing cards)

@@ -1,7 +1,7 @@
 import { memo, useEffect, useMemo, useRef, useState } from "react";
 import { FaChevronDown } from "react-icons/fa";
 
-const ORDER_STATUSES = [
+export const ORDER_STATUSES = [
   "Pending",
   "Processing",
   "Shipped",
@@ -9,7 +9,7 @@ const ORDER_STATUSES = [
   "Cancelled",
 ];
 
-const getPaymentStatusPill = (status) => {
+export const getPaymentStatusPill = (status) => {
   switch (status) {
     case "Paid":
       return "bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-200";
@@ -20,7 +20,7 @@ const getPaymentStatusPill = (status) => {
   }
 };
 
-const getOrderStatusPill = (status) => {
+export const getOrderStatusPill = (status) => {
   switch (status) {
     case "Delivered":
       return "bg-green-100 text-green-800 dark:bg-emerald-500/15 dark:text-emerald-200";
@@ -35,7 +35,7 @@ const getOrderStatusPill = (status) => {
   }
 };
 
-const OrderStatusDropdown = ({ value, onChange }) => {
+export const OrderStatusDropdown = ({ value, onChange }) => {
   const [open, setOpen] = useState(false);
   const rootRef = useRef(null);
 
@@ -139,7 +139,7 @@ const AdminOrderRow = ({ order, onStatusChange }) => {
   );
 
   return (
-    <tr className="border-b border-border dark:border-dark-border hover:bg-background dark:hover:bg-dark-secondary/25 transition-colors">
+    <tr className="border-b border-border dark:border-dark-border hover:bg-secondary/30 dark:hover:bg-dark-secondary/25 transition-colors">
       <td className="px-4 py-3 whitespace-nowrap font-mono text-sm text-primary font-semibold">
         #{shortId}
       </td>

@@ -1,183 +1,190 @@
-# 🛒 ShopHub - MERN E-Commerce Application
+# Diya Expressions — MERN Artisan Store (E‑Commerce)
 
-ShopHub is a full-stack MERN E-Commerce application built using MongoDB, Express.js, React, and Node.js. It provides a modern shopping experience with secure authentication, product management, image uploads, shopping cart, checkout, orders, reviews, and an admin dashboard.
+Diya Expressions is a full‑stack MERN e‑commerce application built with **MongoDB, Express.js, React (Vite), and Node.js**.
+
+It is designed as a **premium artisan brand storefront** for handcrafted creations—warm, elegant, and story‑driven—while still providing a complete e‑commerce feature set (auth, products, cart, checkout, orders, reviews, admin dashboard, uploads, etc.).
+
+---
+
+## ✨ Product Categories (Examples)
+- Handmade Candles  
+- Resin Art (Clocks, Decor, Jewelry)  
+- Floral Decor  
+- Handmade Accessories  
+- Personalized Gifts  
 
 ---
 
 ## 🚀 Features
 
 ### 👤 Authentication
-- User Registration
-- User Login
+- User Registration / Login
 - JWT Authentication
 - Protected Routes
 - Admin Authorization
+- Forgot / Reset Password (Email)
 
 ### 🛍 Products
-- View Products
+- Browse Products
 - Product Details
-- Product Search
-- Product Reviews & Ratings
-- Cloudinary Image Upload
-- Duplicate Product Validation
+- Search + Filters + Sorting
+- Reviews & Ratings
+- Cloudinary Image Uploads
 
-### 🛒 Shopping
+### ❤️ Wishlist
+- Add / Remove wishlist items
+- Persistent wishlist experience
+
+### 🛒 Shopping & Checkout
 - Add to Cart
 - Update Quantity
 - Remove from Cart
 - Stock Validation
-- Persistent Cart (Local Storage)
+- Checkout flow
 
 ### 📦 Orders
-- Checkout
-- Shipping Information
 - Place Order
 - My Orders
 - Admin Order Management
 - Update Order Status
 
+### 💳 Payments
+- Stripe integration (server-side)
+
 ### ⚙️ Admin Dashboard
 - Dashboard Statistics
 - Product Management
 - Order Management
-- Revenue Overview
-- Recent Orders
-- Latest Products
+- Revenue & Reports
+- Recent Orders / Latest Products
+
+### 📄 Exports / Documents
+- PDF Invoice generation
+- Orders CSV / PDF export
 
 ---
 
 ## 🛠 Tech Stack
 
 ### Frontend
-- React
+- React (Vite)
 - React Router
 - Context API
 - Axios
 - Tailwind CSS
+- Framer Motion
 - React Hot Toast
 - React Icons
-- Vite
 
 ### Backend
 - Node.js
 - Express.js
-- MongoDB
-- Mongoose
+- MongoDB + Mongoose
 - JWT
 - Bcrypt
 - Multer
 - Cloudinary
+- Nodemailer
+- Stripe
 
 ---
 
-## 📁 Project Structure
-
-```
-ShopHub
+## 📁 Project Structure (Monorepo)
+SHOPHUB/
 │
-├── backend
-│   ├── config
-│   ├── controllers
-│   ├── middleware
-│   ├── models
-│   ├── routes
-│   ├── utils
-│   └── server.js
+├── backend/
+│ ├── config/
+│ ├── controllers/
+│ ├── middleware/
+│ ├── models/
+│ ├── routes/
+│ ├── services/
+│ ├── utils/
+│ └── server.js
 │
-├── frontend
-│   ├── src
-│   │   ├── assets
-│   │   ├── components
-│   │   ├── context
-│   │   ├── pages
-│   │   ├── services
-│   │   └── App.jsx
-│   └── package.json
+├── frontend/
+│ ├── public/
+│ ├── src/
+│ │ ├── assets/
+│ │ ├── components/
+│ │ ├── context/
+│ │ ├── pages/
+│ │ ├── services/
+│ │ ├── utils/
+│ │ └── App.jsx
+│ └── vite.config.js
 │
 └── README.md
-```
+
+text
+
+
+> Note: The folder/repo name may still be `ShopHub`, but the **brand identity in the application** is **Diya Expressions**.
 
 ---
 
-## ⚡ Installation
+## ⚡ Installation (Local Development)
 
-### Clone Repository
-
+### 1) Clone Repository
 ```bash
 git clone https://github.com/dawoodcs195-spec/ShopHub.git
-```
+2) Backend
+Bash
 
-### Backend
-
-```bash
 cd ShopHub/backend
 npm install
 npm run dev
-```
+3) Frontend
+Bash
 
-### Frontend
-
-```bash
 cd ../frontend
 npm install
 npm run dev
-```
+Frontend runs at:
 
----
+http://localhost:5173
+Backend runs at:
 
-## 🔐 Environment Variables
+http://localhost:5000
+🔐 Environment Variables (Backend)
+Create a .env file inside the backend folder.
 
-Create a `.env` file inside the `backend` folder.
+env
 
-```env
 PORT=5000
-
 MONGO_URI=your_mongodb_connection_string
-
 JWT_SECRET=your_jwt_secret
 
 CLOUDINARY_CLOUD_NAME=your_cloud_name
-
 CLOUDINARY_API_KEY=your_api_key
-
 CLOUDINARY_API_SECRET=your_api_secret
-```
 
----
+STRIPE_SECRET_KEY=your_stripe_secret_key
+STRIPE_WEBHOOK_SECRET=your_stripe_webhook_secret
 
-## ✅ Completed Features
-
-- JWT Authentication
-- Role-Based Authorization
-- Product CRUD
-- Cloudinary Integration
-- Product Search
-- Shopping Cart
-- Checkout
-- Order Management
-- Admin Dashboard
-- Product Reviews & Ratings
-- Dashboard Statistics
-- Stock Validation
-
----
-
-## 🚧 Future Improvements
-
-- User Profile
-- Avatar Upload
-- Forgot Password
-- Wishlist
-- Coupons
-- Online Payments (Stripe / Razorpay)
-- Email Notifications
-- Sales Analytics
-- Deployment
-
----
-
-## 👨‍💻 Author
-
-**Muhammad Dawood**
-
+EMAIL_HOST=smtp.gmail.com
+EMAIL_PORT=587
+EMAIL_USER=your_email
+EMAIL_PASS=your_email_app_password
+EMAIL_FROM="Diya Expressions <your_email>"
+FRONTEND_URL=http://localhost:5173
+✅ Completed Modules
+Authentication + Authorization (JWT, Admin)
+Products + Reviews/Ratings
+Category Filtering / Search / Sorting
+Cart + Checkout
+Orders + Admin order management
+Stripe (backend)
+Cloudinary uploads (products + avatars)
+Email notifications (welcome, order, password reset, delivered)
+PDF Invoice + Orders Export (CSV/PDF)
+Premium storefront UI + animations (Framer Motion)
+🚧 Next Steps / Deployment
+MongoDB Atlas (production database)
+Render (backend hosting)
+Vercel (frontend hosting)
+Production environment variables
+Final responsive refinements + polish
+👨‍💻 Author
+Muhammad Dawood
 GitHub: https://github.com/dawoodcs195-spec
