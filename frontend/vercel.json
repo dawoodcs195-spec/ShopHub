@@ -1,0 +1,5 @@
+@'
+{
+  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+}
+'@ | Set-Content -Encoding UTF8 .\frontend\vercel.json
