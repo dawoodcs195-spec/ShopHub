@@ -22,7 +22,14 @@ const analyticsRoutes = require("./routes/analyticsRoutes"); // ✅ NEW
 const app = express();
 
 // Connect Database
-connectDB();
+app.use("/api", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (err) {
+    next(err);
+  }
+});
 
 // Security Middleware
 app.use(

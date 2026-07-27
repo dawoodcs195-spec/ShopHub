@@ -1,33 +1,41 @@
 const mongoose = require("mongoose");
 
-const connectDB = async () => {
-  try {
-    console.log("🔄 Connecting to MongoDB...");
+let cached = global.__mongoose;
+if (!cached) {
+  cached = global.__mongoose = { conn: null, promise: null, indexesSynced: false };
+}
 
-    const conn = await mongoose.connect(process.env.MONGO_URI);
+async function connectDB() {
+  if (cached.conn) return cached.conn;
 
-    console.log("✅ MongoDB Connected");
-    console.log(`Host: ${conn.connection.host}`);
-    console.log(`Database: ${conn.connection.name}`);
+  if (!cached.promise) {
+    const uri = process.env.MONGO_URI;
+    if (!uri) throw new Error("MONGO_URI is not set");
 
-    // ✅ Ensure analytics indexes exist (unique + TTL)
-    // TTL deletions are handled by MongoDB's TTL monitor (runs periodically).
+    cached.promise = mongoose
+      .connect(uri, {
+        maxPoolSize: 10,
+        serverSelectionTimeoutMS: 30000,
+      })
+      .then((m) => m);
+  }
+
+  cached.conn = await cached.promise;
+
+  // Sync indexes only once per warm instance (optional)
+  if (!cached.indexesSynced) {
+    cached.indexesSynced = true;
     try {
       const DailyVisitor = require("../models/DailyVisitor");
       const DailySiteStat = require("../models/DailySiteStat");
-
       await DailyVisitor.syncIndexes();
       await DailySiteStat.syncIndexes();
-
-      console.log("✅ Analytics indexes synced (DailyVisitor TTL/unique + DailySiteStat)");
-    } catch (indexError) {
-      console.warn("⚠️ Could not sync analytics indexes:", indexError?.message || indexError);
+    } catch (err) {
+      console.warn("Index sync skipped:", err?.message || err);
     }
-  } catch (error) {
-    console.error("❌ MongoDB Connection Failed");
-    console.error(error);
-    process.exit(1);
   }
-};
+
+  return cached.conn;
+}
 
 module.exports = connectDB;
