@@ -8,8 +8,8 @@
     "dev": "nodemon server.js"
   },
   "keywords": [],
-  "author": "",
-  "license": "ISC",
+  "author": "Muhammad Dawood <dawood.cs195@gmail.com>",
+  "license": "MIT",
   "type": "commonjs",
   "dependencies": {
     "bcryptjs": "^3.0.3",
